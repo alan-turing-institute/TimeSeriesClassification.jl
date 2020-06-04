@@ -1,7 +1,7 @@
 module MLJTime
 
 # IMPORTS
-using Tables, CSVFiles
+using IndexedTables, CSVFiles
 
 # from Standard Library:
 using Statistics, DecisionTree
