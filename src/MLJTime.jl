@@ -1,7 +1,7 @@
 module MLJTime
 
 # IMPORTS
-using IndexedTables, CSVFiles
+using IndexedTables, CSVFiles, ZipFile
 
 # from Standard Library:
 using Statistics, DecisionTree
@@ -10,7 +10,7 @@ using Statistics, DecisionTree
 export RandomForestClassifierTS, InvFeatureGen,
        predict_single, InvFeatures, predict_new
 
-export load_gunpoint
+export load_gunpoint, TSdataset
 
 #CONSTANTS
 # the directory containing this file: (.../src/)
