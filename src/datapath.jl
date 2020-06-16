@@ -9,6 +9,12 @@ function load_dataset(fname::String)
     return data_table
 end
 
+function test_train_split(MatrixI)
+    l_index = length(MatrixI[1,:])
+    return MatrixI[:, 1:l_index], MatrixI[:, l_index]
+end
+
+
 load_gunpoint() = load_dataset.(["GunPoint/train.csv", "GunPoint/test.csv"])
 
 function MatrixI(table)
