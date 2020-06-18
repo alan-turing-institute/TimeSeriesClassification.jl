@@ -9,7 +9,7 @@ function load_dataset(fname::String)
     return data_table
 end
 
-function test_train_split(MatrixI)
+function X_y_split(MatrixI::Array)
     l_index = length(MatrixI[1,:])
     return MatrixI[:, 1:l_index], MatrixI[:, l_index]
 end
@@ -28,7 +28,7 @@ function MatrixI(table)
 end
 #permutedims(cat(mat, mat2, dims=3),[1,3,2]) For Motions
 
-function TSdataset(dataset) #check on win
+function TSdataset(dataset::Array) #check on win
     for Dir in dataset
         exdir = string("data/", Dir)
         _link = string("http://timeseriesclassification.com/Downloads/", Dir ,".zip")
@@ -54,6 +54,28 @@ function TSdataset(dataset) #check on win
         end
         close(zarchive)
         run(`rm $fileFullPath`)
+    end
+end
+
+function TSdataset(filepath::String)
+    exdir = string("data/", basename(filepath))
+    fileFullPath = isabspath(filepath) ?  filepath : joinpath(pwd(), filepath)
+    basePath = dirname(fileFullPath)
+    outPath = (exdir == "" ? basePath : (isabspath(exdir) ? exdir : joinpath(pwd(),exdir)))
+    isdir(outPath) ? "" : mkdir(outPath)
+    files = readdir(fileFullPath, join=true)
+    for f in files
+        if f[end-1:end] == "ts"
+            fullFilePath = joinpath(outPath, string(f[1:end-2], "csv"))
+            write(fullFilePath, read(f))
+            open(fullFilePath) do input
+                readuntil(input, "@data")
+                write(fullFilePath, read(input))
+            end
+            run(`sed -i'.original' 's/:/,/g' $fullFilePath`)
+            fullFilePath1 = string(fullFilePath, ".original")
+            run(`rm $fullFilePath1`)
+        end
     end
 end
 

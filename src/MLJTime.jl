@@ -8,9 +8,9 @@ using Statistics, DecisionTree
 
 # EXPORTS
 export RandomForestClassifierTS, InvFeatureGen,
-       predict_single, InvFeatures, predict_new
-
-export load_gunpoint, TSdataset
+       predict_single, InvFeatures, predict_new,
+       X_y_split
+export load_gunpoint, TSdataset, univariate_datasets
 
 #CONSTANTS
 # the directory containing this file: (.../src/)
