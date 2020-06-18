@@ -11,7 +11,7 @@ end
 
 function X_y_split(MatrixI::Array)
     l_index = length(MatrixI[1,:])
-    return MatrixI[:, 1:l_index], MatrixI[:, l_index]
+    return MatrixI[:, 1:l_index-1], MatrixI[:, l_index]
 end
 
 
