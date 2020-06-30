@@ -2,19 +2,14 @@ module MLJTime
 
 # IMPORTS
 using IndexedTables, CSVFiles, ZipFile
-<<<<<<< HEAD
+import MLJModelInterface
 import MLJModelInterface: @mlj_model, fit, predict, matrix
-
-# EXPORTS
-export X_y_split, fit, predict
-
-=======
 
 # EXPORTS
 export RandomForestClassifierFit, InvFeatureGen,
        predict_single, InvFeatures, predict_new,
        X_y_split, fit, predict
->>>>>>> 1ee676afa6699fcb954204a70d00527fda2affad
+
 export load_gunpoint, TSdataset, univariate_datasets
 
 export L1
