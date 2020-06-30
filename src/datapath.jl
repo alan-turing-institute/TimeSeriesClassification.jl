@@ -1,23 +1,7 @@
 
 const DATA_DIR = joinpath(MODULE_DIR, "..", "data")
 
-function load_dataset(fname::String)
-    fpath = joinpath(DATA_DIR, fname)
-    data_raw = load(fpath, header_exists=false)
-    Table = table(data_raw)
-    data_table = MatrixI(Table)
-    return data_table
-end
-
-function X_y_split(MatrixI::Array)
-    l_index = length(MatrixI[1,:])
-    return MatrixI[:, 1:l_index-1], MatrixI[:, l_index]
-end
-
-
-load_gunpoint() = load_dataset.(["GunPoint/train.csv", "GunPoint/test.csv"])
-
-function MatrixI(table)
+function MMI.matrix(table)
     cols = columns(table)
     n, p = length(cols[1]), length(cols)
     matrix = Matrix{Float64}(undef, n, p)
@@ -26,6 +10,23 @@ function MatrixI(table)
     end
     return matrix
 end
+
+function load_dataset(fname::String)
+    fpath = joinpath(DATA_DIR, fname)
+    data_raw = load(fpath, header_exists=false)
+    Table = table(data_raw)
+    data_table = matrix(Table)
+    return data_table
+end
+
+function X_y_split(matrix::Array)
+    l_index = length(matrix[1,:])
+    return matrix[:, 1:l_index-1], matrix[:, l_index]
+end
+
+
+load_gunpoint() = load_dataset.(["GunPoint/train.csv", "GunPoint/test.csv"])
+
 #permutedims(cat(mat, mat2, dims=3),[1,3,2]) For Motions
 
 function TSdataset(dataset::Array) #check on win

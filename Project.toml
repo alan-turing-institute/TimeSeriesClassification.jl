@@ -9,6 +9,7 @@ IndexedTables = "6deec6e2-d858-57c5-ab9b-e6ca5bd20e43"
 Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 DecisionTree = "7806a523-6efd-50cb-b5f6-3fa6f1930dbb"
 CSVFiles = "5d742f6a-9f54-50ce-8119-2520741973ca"
+MLJModelInterface = "e80e1ace-859a-464e-9ed9-23947d8ae3ea"
 
 [compat]
 julia = "1"

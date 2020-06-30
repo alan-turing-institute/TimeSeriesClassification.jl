@@ -1,7 +1,11 @@
+module IntervalBasedForest
 
-function RandomForestClassifierTS(X, y; n_trees::Int=200, min_interval::Int=3)
+using DecisionTree, Statistics
+
+function randomforestflassifierFit(X, y; n_trees::Int=200, min_interval::Int=3,
+                                  pruning_purity_threshold::Float64=0.67)
     transform_xt = InvFeatureGen(X, n_trees=n_trees, min_interval=min_interval)
-    model = DecisionTreeClassifier(pruning_purity_threshold=0.67)
+    model = DecisionTreeClassifier(pruning_purity_threshold=pruning_purity_threshold)
     forest = Array{DecisionTreeClassifier,1}()
     for i in range(1, stop=n_trees)
         mdl = deepcopy(model)
@@ -99,3 +103,5 @@ function predict_new(X1, forest)
     end
     return c
 end
+
+end # randomforestflassifierFit
