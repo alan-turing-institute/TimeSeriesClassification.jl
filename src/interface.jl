@@ -1,10 +1,21 @@
 import MLJModelInterface
+<<<<<<< HEAD
 using .IntervalBasedForest
 const IBF = IntervalBasedForest
 
 
 ###  RandomForestClassifierTS
 MMI.@mlj_model mutable struct RandomForestClassifierTS <: MMI.Probabilistic # have another abstracttype
+=======
+import MLJModelInterface: @mlj_model
+using .IntervalBasedForest
+const IBF = IntervalBasedForest
+const MMI = MLJModelInterface
+
+
+###  RandomForestClassifierTS
+@mlj_model mutable struct RandomForestClassifierTS <: MMI.Probabilistic # have another abstracttype
+>>>>>>> 1ee676afa6699fcb954204a70d00527fda2affad
     n_trees::Int                      =     200::(_  ≥ 1)
     min_interval::Int                 =       3::(_  ≥ 1)
     pruning_purity_threshold::Float64 =    0.67::(0 ≤ _ ≤ 1)
