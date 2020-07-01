@@ -1,6 +1,7 @@
 module IntervalBasedForest
 
-using DecisionTree, Statistics
+using DecisionTree: DecisionTreeClassifier, fit!, predict
+using Statistics
 
 function randomforestflassifierFit(X, y; n_trees::Int=200, min_interval::Int=3,
                                   pruning_purity_threshold::Float64=0.67)
@@ -44,26 +45,6 @@ function InvFeatureGen(X; n_trees::Int=200, min_interval::Int=3)
     return transform_xt
 end
 
-
-
-function predict_single(forest, features)
-    vv = zeros(Float64,2)
-    for i in range(1, stop=200)
-        vv += collect(proba_predict(forest,  (features[i])))
-    end
-    return vv
-end
-
-function proba_predict(forest, X)
-    a = 0
-    for tree in forest
-        if predict(tree, X) == 1
-            a += 1
-        end
-    end
-    (a, length(forest)-a)
-end
-
 function InvFeatures(X, n_trees::Int=200, min_interval::Int=3)
     transform_xt = []
     series_length, = size(X)
@@ -91,6 +72,24 @@ function InvFeatures(X, n_trees::Int=200, min_interval::Int=3)
         push!(transform_xt, vcat(transformed_x))
     end
     return transform_xt
+end
+
+function predict_single(forest, features)
+    vv = zeros(Float64,2)
+    for i in range(1, stop=200)
+        vv += collect(proba_predict(forest,  (features[i])))
+    end
+    return vv
+end
+
+function proba_predict(forest, X)
+    a = 0
+    for tree in forest
+        if predict(tree, X) == 1
+            a += 1
+        end
+    end
+    (a, length(forest)-a)
 end
 
 function predict_new(X1, forest)

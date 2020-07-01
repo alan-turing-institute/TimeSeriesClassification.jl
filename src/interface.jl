@@ -8,7 +8,7 @@ const IBF = IntervalBasedForest
     pruning_purity_threshold::Float64 =    0.67::(0 ≤ _ ≤ 1)
 end
 
-function MMI.fit(m::RandomForestClassifierTS, X, y)
+function MMI.fit(m::RandomForestClassifierTS, verbosity::Int, X, y)
 
     tree = IBF.randomforestflassifierFit(X, y,
                                     n_trees=m.n_trees,
