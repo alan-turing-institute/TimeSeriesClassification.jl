@@ -11,7 +11,8 @@ export RandomForestClassifierFit, InvFeatureGen,
        predict_single, InvFeatures, predict_new,
        X_y_split, fit!, predict, machine
 
-export load_gunpoint, TSdataset, univariate_datasets
+export load_gunpoint, TSdataset, univariate_datasets,
+       load_ts_file, ts_dataset
 
 export L1
 #CONSTANTS
