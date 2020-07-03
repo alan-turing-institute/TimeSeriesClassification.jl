@@ -17,7 +17,7 @@ function MMI.fit(m::RandomForestClassifierTS, verbosity::Int, X, y)
     fitresult = tree
     cache  = nothing
 
-    return fitresult, nothing, nothing 
+    return fitresult
 end
 
 function MMI.predict(m::RandomForestClassifierTS, fitresult, X_new)
