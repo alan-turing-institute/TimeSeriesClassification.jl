@@ -90,15 +90,17 @@ function TSdataset(filepath::String)
 end
 
 """
-   `load_ts_file(fpath)`
-`load_ts_file` takes the path to `ts` files and returns the table (IndexedTable)
-and Array, where `fpath` is path to `ts` file located on your computer.
+   `lload_ts_file(fpath; return_array=false)`
+`load_ts_file` takes the path to `ts` files and returns the table (IndexedTable),
+where `fpath` is path to `ts` file located on your computer.
+on `return_array=true` reurns an Array.
 eg
 ```julia
-   table_a, arr = load_ts_file("/Users/your_user_name/../GunPoint_TRAIN.ts")
+   tableT = load_ts_file("/Users/your_user_name/../Adiac_TRAIN.ts")
+   arr = load_ts_file("/Users/your_user_name/../Adiac_TRAIN.ts", return_array=true)
 ```
 """
-function load_ts_file(fpath)
+function load_ts_file(fpath; return_array=false)
 #`readuntil` and `readlines` are used in combination so that we read data
 # required only for transformation into julia array and table.
     data = open(fpath) do input
@@ -109,20 +111,25 @@ function load_ts_file(fpath)
     # split the string and convert each element into Float64.
     arrays = map(i -> parse.(Float64, split(i, r"[:,]")) , data)
     array = transpose(hcat(arrays...))*1 # Creates 2D Array.
-    return table(eachcol(array[:, 1:end-1])...), table(array[:, end])
+    if return_array == true
+        return array
+    else
+        return table(eachcol(array[:, 1:end-1])...), table(array[:, end])
+    end
 end
 
 """
-   `ts_dataset(dataset, test_or_train)`
+   `ts_dataset(dataset; split=nothing)`
 `ts_dataset` takes two inputes, `dataset` is the name of datasets available in the
-`data` folder & `test_or_train` specifile the train or test part.
+`data` folder & `split` specifile the train or test part.
 Reurns dataset and target variable.
 eg
 ```julia
-   X, y = ts_dataset("Adiac", nothing)
+   X, y = ts_dataset("Adiac")
+   X_test, y_test = ts_dataset("Adiac", split="test")
 ```
 """
-function ts_dataset(dataset::String, split=nothing)
+function ts_dataset(dataset::String; split=nothing)
     if split in ["test", "train"]
          fpath = joinpath(DATA_DIR, dataset, string(dataset, "_", uppercase(split), ".ts" ))
          return load_ts_file(fpath)
@@ -134,6 +141,8 @@ function ts_dataset(dataset::String, split=nothing)
          end
          test, train =  load_ts_file.(v)
          return merge(test[1], train[1]), merge(test[2], train[2])
+    else
+        throw(ArgumentError("Invalid `split` value: $split"))
     end
 end
 
