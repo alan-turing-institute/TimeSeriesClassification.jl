@@ -93,7 +93,7 @@ function proba_predict(forest, X)
 end
 
 function predict_new(X1, forest)
-    t_stamp = length(X1[1, :])
+    t_stamp = size(X1)[1]
     c = Array{Float64}(undef, t_stamp)
     for i=1:t_stamp
         y_hat = InvFeatures(X1[i,:])
