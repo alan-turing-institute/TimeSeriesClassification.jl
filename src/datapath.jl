@@ -27,8 +27,17 @@ end
 
 load_gunpoint() = load_dataset.(["GunPoint/train.csv", "GunPoint/test.csv"])
 
-#permutedims(cat(mat, mat2, dims=3),[1,3,2]) For Motions
+#NOTE: permutedims(cat(mat, mat2, dims=3),[1,3,2]) For Motions, eg for multi-dimensional dataset.
 
+"""
+    `TSdataset(dataset::Array)`
+TSdataset takes subset of the `univariate_datasets` avilabe on the `timeseriesclassification`
+website and adds `csv` files to the `data` folder after conversion (`ts` -> `csv`).
+eg.
+```julia
+   TSdataset(["ACSF1", "Adiac"])
+```
+"""
 function TSdataset(dataset::Array) #check on win
     for Dir in dataset
         exdir = string("data/", Dir)
@@ -77,6 +86,63 @@ function TSdataset(filepath::String)
             fullFilePath1 = string(fullFilePath, ".original")
             run(`rm $fullFilePath1`)
         end
+    end
+end
+
+"""
+   `lload_ts_file(fpath; return_array=false)`
+`load_ts_file` takes the path to `ts` files and returns the table (IndexedTable),
+where `fpath` is path to `ts` file located on your computer.
+on `return_array=true` reurns an Array.
+eg
+```julia
+   tableT = load_ts_file("/Users/your_user_name/../Adiac_TRAIN.ts")
+   arr = load_ts_file("/Users/your_user_name/../Adiac_TRAIN.ts", return_array=true)
+```
+"""
+function load_ts_file(fpath; return_array=false)
+#`readuntil` and `readlines` are used in combination so that we read data
+# required only for transformation into julia array and table.
+    data = open(fpath) do input
+          readuntil(input, "@data")
+          readlines(input)
+    end
+    data = data[2:end] # removes  the empty string.
+    # split the string and convert each element into Float64.
+    arrays = map(i -> parse.(Float64, split(i, r"[:,]")) , data)
+    array = transpose(hcat(arrays...))*1 # Creates 2D Array.
+    if return_array == true
+        return array
+    else
+        return table(eachcol(array[:, 1:end-1])...), table(array[:, end])
+    end
+end
+
+"""
+   `ts_dataset(dataset; split=nothing)`
+`ts_dataset` takes two inputes, `dataset` is the name of datasets available in the
+`data` folder & `split` specifile the train or test part.
+Reurns dataset and target variable.
+eg
+```julia
+   X, y = ts_dataset("Adiac")
+   X_test, y_test = ts_dataset("Adiac", split="test")
+```
+"""
+function ts_dataset(dataset::String; split=nothing)
+    if split in ["test", "train"]
+         fpath = joinpath(DATA_DIR, dataset, string(dataset, "_", uppercase(split), ".ts" ))
+         return load_ts_file(fpath)
+    elseif split == nothing
+         v = []
+         for i in ["test", "train"]
+             fpath = joinpath(DATA_DIR, dataset, string(dataset, "_", uppercase(i), ".ts" ))
+             push!(v, fpath)
+         end
+         test, train =  load_ts_file.(v)
+         return merge(test[1], train[1]), merge(test[2], train[2])
+    else
+        throw(ArgumentError("Invalid `split` value: $split"))
     end
 end
 
