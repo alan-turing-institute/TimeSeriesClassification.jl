@@ -11,6 +11,8 @@ function MMI.matrix(table)
     return matrix
 end
 
+array(table) =  Array(columns(table)...)
+
 function load_dataset(fname::String)
     fpath = joinpath(DATA_DIR, fname)
     data_raw = load(fpath, header_exists=false)
