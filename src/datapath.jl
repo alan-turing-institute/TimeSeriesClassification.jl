@@ -1,5 +1,6 @@
 
 const DATA_DIR = joinpath(MODULE_DIR, "..", "data")
+using CategoricalArrays
 
 function MMI.matrix(table)
     cols = columns(table)
@@ -112,11 +113,11 @@ function load_ts_file(fpath; return_array=false)
     data = data[2:end] # removes  the empty string.
     # split the string and convert each element into Float64.
     arrays = map(i -> parse.(Float64, split(i, r"[:,]")) , data)
-    array = transpose(hcat(arrays...))*1 # Creates 2D Array.
+    array = transpose(hcat(arrays...)) # Creates 2D Array.
     if return_array == true
         return array
     else
-        return table(eachcol(array[:, 1:end-1])...), table(array[:, end])
+        return table(eachcol(array[:, 1:end-1])...), CategoricalArray(array[:, end])
     end
 end
 
@@ -142,7 +143,7 @@ function ts_dataset(dataset::String; split=nothing)
              push!(v, fpath)
          end
          test, train =  load_ts_file.(v)
-         return merge(test[1], train[1]), merge(test[2], train[2])
+         return merge(test[1], train[1]), vcat(test[2], train[2])
     else
         throw(ArgumentError("Invalid `split` value: $split"))
     end

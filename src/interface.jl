@@ -9,23 +9,25 @@ const IBF = IntervalBasedForest
 end
 
 function MMI.fit(m::RandomForestClassifierTS, verbosity::Int, X, y)
-    X, y = MMI.matrix(X), array(y)
+    X, yplain = MMI.matrix(X), MMI.int(y)
+    classes_seen  = filter(in(unique(y)), MMI.classes(y[1]))
+    integers_seen = MMI.int(classes_seen)
     tree = IBF.randomforestflassifierFit(X, y,
                                     n_trees=m.n_trees,
                                     min_interval=m.min_interval,
                                     pruning_purity_threshold=m.pruning_purity_threshold)
-    fitresult = tree
+    fitresult = (tree, classes_seen, integers_seen)
     cache  = nothing
 
     return fitresult, nothing, nothing
 end
 
 function MMI.predict(m::RandomForestClassifierTS, fitresult, X_new)
-    tree = fitresult
     X_new = MMI.matrix(X_new)
+    tree, classes_seen, integers_seen = fitresult
     # retrieve the predicted scores
-    scores = IBF.predict_new(X_new, tree)
+    scores = IBF.predict_new(X_new, fitresult)
     # smooth if required
     # return vector of UF
-    return scores
+    return MMI.UnivariateFinite(classes_seen, scores)
 end

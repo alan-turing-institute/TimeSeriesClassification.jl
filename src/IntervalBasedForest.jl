@@ -75,7 +75,7 @@ function InvFeatures(X, n_trees::Int=200, min_interval::Int=3)
 end
 
 function predict_single(forest, features)
-    vv = zeros(Float64,2)
+    vv = zeros(Float64,length(forest.classes_seen))
     for i in range(1, stop=200)
         vv += collect(proba_predict(forest,  (features[i])))
     end
@@ -83,13 +83,8 @@ function predict_single(forest, features)
 end
 
 function proba_predict(forest, X)
-    a = 0
-    for tree in forest
-        if predict(tree, X) == 1
-            a += 1
-        end
-    end
-    (a, length(forest)-a)
+    vv = [predict(tree, X) for tree in forest.tree]
+    #Fix is needed here.
 end
 
 function predict_new(X1, forest)
@@ -97,8 +92,7 @@ function predict_new(X1, forest)
     c = Array{Float64}(undef, t_stamp)
     for i=1:t_stamp
         y_hat = InvFeatures(X1[i,:])
-        a, b = predict_single(forest, y_hat)
-        c[i] = a > b ? 1 : 2
+        c[i] = predict_single(forest, y_hat)
     end
     return c
 end
