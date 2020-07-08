@@ -3,7 +3,7 @@ module IntervalBasedForest
 using DecisionTree: DecisionTreeClassifier, fit!, predict_proba
 using Statistics
 
-function randomforestflassifierFit(X, y; n_trees::Int=200, min_interval::Int=3,
+function TimeSeriesForestClassifier(X, y; n_trees::Int=200, min_interval::Int=3,
                                   pruning_purity_threshold::Float64=0.67)
     transform_xt = InvFeatureGen(X, n_trees=n_trees, min_interval=min_interval)
     model = DecisionTreeClassifier(pruning_purity_threshold=pruning_purity_threshold)
@@ -53,7 +53,7 @@ function predict_new(X1, forest, integers_seen)
     for i=1:n_tree
         sum += predict_proba(forest[i], X1[i])
     end
-    return sum/n_tree 
+    return sum/n_tree
 end
 
-end # randomforestflassifierFit
+end # TimeSeriesForestClassifier
