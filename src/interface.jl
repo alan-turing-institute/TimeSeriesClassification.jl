@@ -28,7 +28,15 @@ function MMI.predict(m::TimeSeriesForestClassifier, fitresult, X_new)
     # retrieve the predicted scores
     scores = IBF.predict_new(X_new, forest, intervals, integers_seen)
     # smooth if required
-    sm_scores =  map(x -> x > 0.5 ? 1 : 0, scores)
+    sm_scores =  smooth(scores)
     # return vector of UF
     return MMI.UnivariateFinite(classes_seen, sm_scores)
+end
+
+function  smooth(X)
+    a, b = size(X)
+    sm_scores = zeros(a, b)
+    indices = map(i -> CartesianIndex(i, findmax(X[i, :])[2]), [1:a;])
+    sm_scores[indices] .= 1
+    return sm_scores
 end
