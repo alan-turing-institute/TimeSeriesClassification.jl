@@ -2,7 +2,7 @@ module MLJTime
 
 # IMPORTS
 using IndexedTables, CSVFiles, ZipFile
-using  MLJBase: fit!, predict, machine, partition
+using  MLJBase: fit!, predict, machine, partition, L1, CV, range, cross_entropy
 import MLJModelInterface
 import MLJModelInterface: @mlj_model, fit, predict, matrix
 using StableRNGs
@@ -16,7 +16,7 @@ export load_gunpoint, TSdataset, univariate_datasets,
        load_ts_file, ts_dataset, partition, matrix,
        array
 
-export L1, StableRNG
+export L1, StableRNG, CV, range, cross_entropy
 #CONSTANTS
 # the directory containing this file: (.../src/)
 const MODULE_DIR = dirname(@__FILE__)
