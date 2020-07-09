@@ -12,11 +12,11 @@ function MMI.fit(m::TimeSeriesForestClassifier, verbosity::Int, X, y)
     X, yplain = MMI.matrix(X), MMI.int(y)
     classes_seen  = filter(in(unique(y)), MMI.classes(y[1]))
     integers_seen = MMI.int(classes_seen)
-    forest = IBF.TimeSeriesForestClassifier(X, yplain,
+    forest, intervals = IBF.TimeSeriesForestClassifier(X, yplain,
                                     n_trees=m.n_trees,
                                     min_interval=m.min_interval,
                                     pruning_purity_threshold=m.pruning_purity_threshold)
-    fitresult = (forest, classes_seen, integers_seen)
+    fitresult = (forest, intervals, classes_seen, integers_seen)
     cache  = nothing
 
     return fitresult, nothing, nothing
@@ -24,10 +24,11 @@ end
 
 function MMI.predict(m::TimeSeriesForestClassifier, fitresult, X_new)
     X_new = MMI.matrix(X_new)
-    forest, classes_seen, integers_seen = fitresult
+    forest, intervals, classes_seen, integers_seen = fitresult
     # retrieve the predicted scores
-    scores = IBF.predict_new(X_new, forest, integers_seen)
+    scores = IBF.predict_new(X_new, forest, intervals, integers_seen)
     # smooth if required
+    sm_scores =  map(x -> x > 0.5 ? 1 : 0, scores)
     # return vector of UF
-    return MMI.UnivariateFinite(classes_seen, scores)
+    return MMI.UnivariateFinite(classes_seen, sm_scores)
 end
