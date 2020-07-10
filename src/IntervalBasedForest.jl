@@ -3,19 +3,35 @@ module IntervalBasedForest
 using DecisionTree: DecisionTreeClassifier, fit!, apply_tree_proba, build_tree, Node
 using Statistics
 
-function TimeSeriesForestClassifier(X, y; n_trees::Int=200, min_interval::Int=3,
-                                  pruning_purity_threshold::Float64=0.67)
-    transform_xt, intervals = InvFeatureGen(X, n_trees=n_trees, min_interval=min_interval)
-    model = DecisionTreeClassifier(pruning_purity_threshold=pruning_purity_threshold)
+function TimeSeriesForestClassifier(m, X, y)
+    min_interval = m.min_interval
+    n_trees = m.n_trees
+    transform_xt, intervals = InvFeatureGen(X, n_trees, min_interval)
     forest = Array{Node,1}()
     for i in range(1, stop=n_trees)
-        mdl = build_tree(y, transform_xt[i])
+        mdl = build_tree(y, transform_xt[i],
+                         m.n_subfeatures,
+                         m.max_depth,
+                         m.min_samples_leaf,
+                         m.min_samples_split,
+                         m.min_purity_increase)
         push!(forest, mdl)
     end
     forest, intervals
 end
 
-function InvFeatureGen(X; n_trees::Int=200, min_interval::Int=3)
+function predict_new(X1, forest, intervals, integers_seen)
+    n_instance, s_length = size(X1)
+    n_trees = length(forest)
+    X1 = InvFeatureGen(X1, intervals, n_trees)
+    sum = zeros(n_instance, length(integers_seen))
+    for i=1:n_trees
+        sum += apply_tree_proba(forest[i], X1[i], integers_seen)
+    end
+    return sum/n_trees
+end
+
+function InvFeatureGen(X, n_trees::Int, min_interval::Int)
     n_samps, series_length = size(X)
     transform_xt = Array{Array{Float64,2},1}()
     n_intervals = floor(Int, sqrt(series_length))
@@ -44,7 +60,7 @@ function InvFeatureGen(X; n_trees::Int=200, min_interval::Int=3)
     return transform_xt, intervals
 end
 
-function InvFeatureGen(X, intervals; n_trees::Int=200, min_interval::Int=3)
+function InvFeatureGen(X, intervals::Array, n_trees::Int)
     n_samps, series_length = size(X)
     transform_xt = Array{Array{Float64,2},1}()
     n_intervals = floor(Int, sqrt(series_length))
@@ -64,17 +80,6 @@ function InvFeatureGen(X, intervals; n_trees::Int=200, min_interval::Int=3)
            push!(transform_xt, transpose(transformed_x))
     end
     return transform_xt
-end
-
-function predict_new(X1, forest, intervals, integers_seen)
-    n_instance, s_length = size(X1)
-    n_tree = length(forest)
-    X1 = InvFeatureGen(X1, intervals, n_trees=n_tree)
-    sum = zeros(n_instance, length(integers_seen))
-    for i=1:n_tree
-        sum += apply_tree_proba(forest[i], X1[i], integers_seen)
-    end
-    return sum/n_tree
 end
 
 end # TimeSeriesForestClassifier

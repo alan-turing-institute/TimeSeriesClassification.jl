@@ -25,7 +25,6 @@ const MMI = MLJModelInterface
 # Includes
 include("IntervalBasedForest.jl")
 include("datapath.jl")
-include("measures.jl")
 include("interface.jl")
 
 end # module
