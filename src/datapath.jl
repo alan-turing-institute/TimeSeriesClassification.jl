@@ -4,96 +4,33 @@ using CategoricalArrays
 
 function MMI.matrix(table)
     cols = columns(table)
-    n, p = length(cols[1]), length(cols)
-    matrix = Matrix{Float64}(undef, n, p)
-    for i=1:p
+    a, b = length(cols[1]), length(cols)
+    matrix = Matrix{Float64}(undef, a, b)
+    for i=1:b
         matrix[:, i] = cols[i]
     end
     return matrix
 end
 
-array(table) =  Array(columns(table)...)
+"""
+load_dataset(fpath)
 
+Load one of standard dataset like Chinatown etc assuming the file is a
+comma separated file.
+
+"""
 function load_dataset(fname::String)
     fpath = joinpath(DATA_DIR, fname)
     data_raw = load(fpath, header_exists=false)
-    Table = table(data_raw)
-    data_table = matrix(Table)
-    return data_table
+    Xmatrix = matrix(table(data_raw)) #check if we can use data_raw directly for y
+    return table(Xmatrix[:, 1:end-1]), CategoricalArray(Xmatrix[:,end])
 end
-
-function X_y_split(matrix::Array)
-    l_index = length(matrix[1,:])
-    return matrix[:, 1:l_index-1], matrix[:, l_index]
-end
-
-
-load_gunpoint() = load_dataset.(["GunPoint/train.csv", "GunPoint/test.csv"])
 
 #NOTE: permutedims(cat(mat, mat2, dims=3),[1,3,2]) For Motions, eg for multi-dimensional dataset.
 
 """
-    `TSdataset(dataset::Array)`
-TSdataset takes subset of the `univariate_datasets` avilabe on the `timeseriesclassification`
-website and adds `csv` files to the `data` folder after conversion (`ts` -> `csv`).
-eg.
-```julia
-   TSdataset(["ACSF1", "Adiac"])
-```
-"""
-function TSdataset(dataset::Array) #check on win
-    for Dir in dataset
-        exdir = string("data/", Dir)
-        _link = string("http://timeseriesclassification.com/Downloads/", Dir ,".zip")
-        Base.download(_link, Dir)
-        fileFullPath = isabspath(Dir) ?  Dir : joinpath(pwd(), Dir)
-        basePath = dirname(fileFullPath)
-        outPath = (exdir == "" ? basePath : (isabspath(exdir) ? exdir : joinpath(pwd(),exdir)))
-        isdir(outPath) ? "" : mkdir(outPath)
-        zarchive = ZipFile.Reader(fileFullPath)
-        for f in zarchive.files
-            if f.name[end-1:end] == "ts"
-                f.name = string(f.name[1:end-2], "csv")
-                fullFilePath = joinpath(outPath,f.name)
-                write(fullFilePath, read(f))
-                open(fullFilePath) do input
-                    readuntil(input, "@data")
-                    write(fullFilePath, read(input))
-                end
-                run(`sed -i'.original' 's/:/,/g' $fullFilePath`)
-                fullFilePath1 = string(fullFilePath, ".original")
-                run(`rm $fullFilePath1`)
-            end
-        end
-        close(zarchive)
-        run(`rm $fileFullPath`)
-    end
-end
+   `load_ts_file(fpath; return_array=false)`
 
-function TSdataset(filepath::String)
-    exdir = string("data/", basename(filepath))
-    fileFullPath = isabspath(filepath) ?  filepath : joinpath(pwd(), filepath)
-    basePath = dirname(fileFullPath)
-    outPath = (exdir == "" ? basePath : (isabspath(exdir) ? exdir : joinpath(pwd(),exdir)))
-    isdir(outPath) ? "" : mkdir(outPath)
-    files = readdir(fileFullPath, join=true)
-    for f in files
-        if f[end-1:end] == "ts"
-            fullFilePath = joinpath(outPath, string(f[1:end-2], "csv"))
-            write(fullFilePath, read(f))
-            open(fullFilePath) do input
-                readuntil(input, "@data")
-                write(fullFilePath, read(input))
-            end
-            run(`sed -i'.original' 's/:/,/g' $fullFilePath`)
-            fullFilePath1 = string(fullFilePath, ".original")
-            run(`rm $fullFilePath1`)
-        end
-    end
-end
-
-"""
-   `lload_ts_file(fpath; return_array=false)`
 `load_ts_file` takes the path to `ts` files and returns the table (IndexedTable),
 where `fpath` is path to `ts` file located on your computer.
 on `return_array=true` reurns an Array.
@@ -113,11 +50,11 @@ function load_ts_file(fpath; return_array=false)
     data = data[2:end] # removes  the empty string.
     # split the string and convert each element into Float64.
     arrays = map(i -> parse.(Float64, split(i, r"[:,]")) , data)
-    array = transpose(hcat(arrays...)) # Creates 2D Array.
+    Xmatrix = transpose(hcat(arrays...)) # Creates 2D Array.
     if return_array == true
-        return array
+        return Xmatrix
     else
-        return table(eachcol(array[:, 1:end-1])...), CategoricalArray(array[:, end])
+        return table(eachcol(Xmatrix[:, 1:end-1])...), CategoricalArray(Xmatrix[:, end])
     end
 end
 
