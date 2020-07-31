@@ -22,8 +22,10 @@ for dataset in datasets
        model = TimeSeriesForestClassifier(n_trees=n_trees, random_state=rng)
        mach = machine(model, X[train], y[train])
        RESULTS[dataset]["$n_trees trees"]["fit"] = @benchmarkable fit!($mach, force=true)
-       RELPREC[dataset]["$n_trees trees"]["cross_entropy"] = evaluate!(mach,
-                                                             measure=cross_entropy)
+       fit!(mach, force=true)
+       RESULTS[dataset]["$n_trees trees"]["predict"] = @benchmarkable predict($mach, $X[$test])
+       y_pred = predict_mode(mach, X[test])
+       RELPREC[dataset]["$n_trees trees"]["Accuracy"] = accuracy(y_pred, y[test])
    end
 
 end
