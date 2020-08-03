@@ -1,31 +1,28 @@
 # ==========
 # TSF
 # ==========
-
-SUITE["tsf"] = BenchmarkGroup()
-RESULTS = SUITE["tsf"]
-RELPREC = Dict()
+using BenchmarkTools, MLJTime
 
 datasets = ["Adiac", "Chinatown"]
 
+io =  open("benchmark/results.txt", "w")
+write(io, "dataset,predict_bench,fit_bench,Accuracy\n")
 for dataset in datasets
-   RESULTS[dataset] = BenchmarkGroup()
-   RELPREC[dataset] = Dict()
-
    X, y = ts_dataset(dataset)
    train, test = partition(eachindex(y), 0.7, shuffle=true, rng=123)
-   rng = StableRNG(566)
-
-   for n_trees in [3, 5]
-       RESULTS[dataset]["$n_trees trees"] = BenchmarkGroup()
-       RELPREC[dataset]["$n_trees trees"] = Dict()
-       model = TimeSeriesForestClassifier(n_trees=n_trees, random_state=rng)
+   for n_trees in [200]
+       model = TimeSeriesForestClassifier(n_trees=n_trees)
        mach = machine(model, X[train], y[train])
-       RESULTS[dataset]["$n_trees trees"]["fit"] = @benchmarkable fit!($mach, force=true)
-       fit!(mach, force=true)
-       RESULTS[dataset]["$n_trees trees"]["predict"] = @benchmarkable predict($mach, $X[$test])
+       fit!(mach)
+       fit_bench = @benchmark fit!($mach, force=true)
+       fit_bench = ( fit_bench.times |> median )*10^-9   #As fit_bench.times is in nano seconds 
        y_pred = predict_mode(mach, X[test])
-       RELPREC[dataset]["$n_trees trees"]["Accuracy"] = accuracy(y_pred, y[test])
+       predict_bench = @benchmark predict($mach, $X[$test])
+       predict_bench = ( predict_bench.times |> median )*10^-9
+       Accuracy = accuracy(y_pred, y[test])
+       write(io, "$dataset,$predict_bench,$fit_bench,$Accuracy\n")
    end
-
 end
+
+close(io)
+
