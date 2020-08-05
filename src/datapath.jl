@@ -59,7 +59,7 @@ function load_ts_file(fpath; return_array=false)
 end
 
 """
-   `ts_dataset(dataset; split=nothing)`
+   `ts_dataset(dataset; split=false)`
 `ts_dataset` takes two inputes, `dataset` is the name of datasets available in the
 `data` folder & `split` specifile the train or test part.
 Reurns dataset and target variable.
@@ -69,11 +69,11 @@ eg
    X_test, y_test = ts_dataset("Adiac", split="test")
 ```
 """
-function ts_dataset(dataset::String; split=nothing)
+function ts_dataset(dataset::String; split=false)
     if split in ["test", "train"]
          fpath = joinpath(DATA_DIR, dataset, string(dataset, "_", uppercase(split), ".ts" ))
          return load_ts_file(fpath)
-    elseif split == nothing
+    elseif split == false
          v = []
          for i in ["test", "train"]
              fpath = joinpath(DATA_DIR, dataset, string(dataset, "_", uppercase(i), ".ts" ))
@@ -81,6 +81,65 @@ function ts_dataset(dataset::String; split=nothing)
          end
          test, train =  load_ts_file.(v)
          return merge(test[1], train[1]), vcat(test[2], train[2])
+    else
+        throw(ArgumentError("Invalid `split` value: $split"))
+    end
+end
+
+"""
+   `load_from_tsfile_to_NDArray(fpath)`
+
+`load_from_tsfile_to_NDArray` takes the path to `ts` files and reurns an Array.
+eg
+```julia
+   tableT = load_from_tsfile_to_NDArray("/Users/your_user_name/../BasicMotions_TRAIN.ts")
+   arr = load_from_tsfile_to_NDArray("/Users/your_user_name/../BasicMotions_TRAIN.ts")
+```
+"""
+function load_from_tsfile_to_NDArray(fpath)
+    data = open(fpath) do input
+        readuntil(input, "@data")
+        readlines(input)
+    end
+    data = split.(data[2:end], r"[:]")
+    instance = length(data)
+    dimensions  = length(data[1]) - 1
+    series_dim1 = split(data[1][1], r"[,]")
+    serieslength = length(series_dim1)
+    NDMatrix = zeros(instance, serieslength, dimensions)
+    data = cat(data..., dims=3)
+    for i=1:instance
+        for j=1:dimensions
+            NDMatrix[i,:,j] = parse.(Float64, split(data[j,1,i], r"[,]"))
+        end
+    end
+    return NDMatrix, categorical(data[dimensions+1,1,:])
+end
+
+"""
+   `load_NDdataset(dataset::String; split=false)`
+`load_NDdataset` takes two inputes, `dataset` is the name of datasets available in the
+`data` folder & `split` specifile the train or test part.
+Reurns dataset and target variable.
+eg
+```julia
+   X, y = ts_dataset("BasicMotions")
+   X_test, y_test = ts_dataset("BasicMotions", split="test")
+```
+"""
+function load_NDdataset(dataset::String; split=false)
+    if split in ["test", "train"]
+        fpath = joinpath(DATA_DIR, dataset, string(dataset, "_", uppercase(split), ".ts" ))
+        X, y = load_from_tsfile_to_NDArray(fpath)
+        return X, y
+    elseif split == false
+        v = []
+        for i in ["test", "train"]
+            fpath = joinpath(DATA_DIR, dataset, string(dataset, "_", uppercase(i), ".ts" ))
+            push!(v, fpath)
+        end
+        test, train =  load_from_tsfile_to_NDArray.(v)
+        return vcat(test[1], train[1]), vcat(test[2], train[2])
     else
         throw(ArgumentError("Invalid `split` value: $split"))
     end
