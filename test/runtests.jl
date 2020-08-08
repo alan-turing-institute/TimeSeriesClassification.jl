@@ -20,3 +20,11 @@ using Test
     print(y_pred)
 end
 =#
+@testset "distances" begin
+    rng = StableRNG(566)
+    a = rand(rng, Int64, 5)
+    b = rand(rng, Int64, 5)
+    w = 0
+    @test dwt_distance(a, b, -1) == -1.4414459243586494e19
+end 
+

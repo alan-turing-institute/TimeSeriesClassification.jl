@@ -12,8 +12,8 @@ using StableRNGs
 export RandomForestClassifierFit, InvFeatureGen, predict_new,
        fit!, predict, machine, fitted_params, predict_mode, accuracy
 
-export univariate_datasets, load_dataset,
-       load_ts_file, ts_dataset, partition, matrix
+export univariate_datasets, load_dataset, load_from_tsfile_to_NDArray,
+       load_ts_file, ts_dataset, partition, matrix, dwt_distance, load_NDdataset
 
 export L1, StableRNG, CV, range, cross_entropy
 #CONSTANTS
