@@ -25,6 +25,6 @@ end
     a = rand(rng, Int64, 5)
     b = rand(rng, Int64, 5)
     w = 0
-    @test dwt_distance(a, b, -1) == -1.4414459243586494e19
+    @test dwt_distance(a, b, -1) == -2.0220611846636306e19
 end 
 
