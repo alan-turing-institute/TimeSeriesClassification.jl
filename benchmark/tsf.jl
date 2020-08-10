@@ -149,7 +149,7 @@ for dataset in datasets
        fit!(mach)
        fit_bench = @benchmark fit!($mach, force=true)
        fit_bench = ( fit_bench.times |> mean )*10^-9   #As fit_bench.times is in nano seconds 
-       y_pred = predict_mode(mach, X_test)
+       y_pred = predict_mean(mach, X_test)
        predict_bench = @benchmark predict($mach, $X_test)
        predict_bench = ( predict_bench.times |> mean )*10^-9
        Accuracy = accuracy(y_pred, y_test)

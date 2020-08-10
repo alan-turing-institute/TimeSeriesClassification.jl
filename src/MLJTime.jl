@@ -3,13 +3,13 @@ module MLJTime
 # IMPORTS
 using IndexedTables, CSVFiles, ZipFile
 using  MLJBase: fit!, predict, machine, partition, L1, CV, range, cross_entropy, 
-       predict_mode, accuracy
+       predict_mode, accuracy, predict_mean
 import MLJModelInterface
 import MLJModelInterface: @mlj_model, fit, predict, matrix
 using StableRNGs
 
 # EXPORTS
-export RandomForestClassifierFit, InvFeatureGen, predict_new,
+export RandomForestClassifierFit, InvFeatureGen, predict_new, predict_mean,
        fit!, predict, machine, fitted_params, predict_mode, accuracy
 
 export univariate_datasets, load_dataset, load_from_tsfile_to_NDArray,
