@@ -15,16 +15,14 @@ of window for warping.
 function dwt_distance(a, b, w)
     l_a, l_b = length(a), length(b)
     FloatMax = maxintfloat(Float64)
-
     if w <= 0
         band = max(l_b, l_a)
     else
         band = floor(Int, w*max(l_b, l_a))
     end
-
     M = zeros(l_a+1,l_b+1)
-    M[1, 1:end] .= FloatMax
-    M[1:end, 1] .= FloatMax
+    M[1, 2:end] .= FloatMax
+    M[2:end, 1] .= FloatMax
     for k=2:l_a 
         M[k, 2:end] =  (a .-  b[k]).^2
     end
@@ -36,7 +34,7 @@ function dwt_distance(a, b, w)
         if idx_inf_left >= 1
             M[i, idx_inf_left] = FloatMax
         end
-        for j=jstart:jstop-1
+        for j=jstart:jstop
             im = i-1
             jm = j-1
             M[i,j] = M[i,j] + min(min(M[im,j], M[i,jm]), M[im,jm])
@@ -56,7 +54,7 @@ function TimeSeriesKnn(X, Y, y, k) #fucntion is rigide and there is no shufling 
     yplane = MMI.int(y)
     for i=1:n_test
         for j=1:n_train
-            DistanceMatrix[i, j] = dwt_distance(X[i,:],Y[i,:],-1)
+            DistanceMatrix[i, j] = dwt_distance(X[j,:],Y[i,:],-1)
         end
     end
     index, dist = select_sort(DistanceMatrix, k), DistanceMatrix[:, 1:k] 
