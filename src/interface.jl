@@ -88,3 +88,49 @@ MMI.fitted_params(::TimeSeriesForestClassifier, fitresult) =
 #=
  NOTE: Should we add pretty printing?
 =#
+
+"""
+An adapted version of the NearestNeighbors knn to work with
+time series data.       
+
+## Hyperparameters
+
+ -  `n_neighbors`            Int, set k for knn (default = 5)
+ -  `weights`                mechanism for weighting a vote 'uniform', 'distance'
+ -  `search_algorithm`       search method for neighbours default = "select_sort"
+ -  `metric`                 distance measure for time series default = "dtw_distance"
+ -  `metric_params`          dictionary for metric parameters
+
+"""
+@mlj_model mutable struct TimeSeriesKNNClassifier <: MMI.Probabilistic
+    n_neighbors::Int                      =   5::(_  ≥ 1)
+    weights::Symbol                       =   :uniform
+    search_algorithm::Symbol              =   :select_sort
+    metric::Symbol                        =   :dtw_distance
+    metric_params::Array                  =   [-1.0]
+end
+
+function MMI.fit(m::TimeSeriesKNNClassifier, verbosity::Int, X, y)
+    Xmatrix, yplain = MMI.matrix(X), MMI.int(y)
+    classes_seen  = filter(in(unique(y)), MMI.classes(y[1]))
+    integers_seen = MMI.int(classes_seen)
+    fitresult = (Xmatrix, yplain, classes_seen, integers_seen)
+    cache  = nothing
+    return fitresult, nothing, nothing
+end
+
+function MMI.predict(m::TimeSeriesKNNClassifier, fitresult, Xnew)
+    Xmatrix_new = MMI.matrix(Xnew)
+    Xmatrix, yplain, classes_seen, integers_seen = fitresult
+    y_pred, DistanceMatrix = Predict_new(m, Xmatrix, Xmatrix_new, yplain)
+    a, b = length(y_pred), length(integers_seen)
+    probas = zeros(a, b)
+    for i=1:a
+        for j=1:b
+            probas[i,j] = Int(y_pred[i]) == j ? 1 : 0
+        end
+    end
+    return  MMI.UnivariateFinite(classes_seen, probas)
+end
+
+# MMI.fitted_params(::TimeSeriesKNNClassifier, fitresult) 

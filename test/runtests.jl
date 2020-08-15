@@ -24,6 +24,6 @@ end
     rng = StableRNG(566)
     a = rand(rng, Int64, 5)
     b = rand(rng, Int64, 5)
-    @test dwt_distance(a, b, -1) == -2.9402683278543684e19
+    @test dtw_distance(a, b, -1) == -2.9402683278543684e19
 end 
 

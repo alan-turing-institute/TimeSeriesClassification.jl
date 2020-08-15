@@ -2,17 +2,14 @@
 #import Distances: evaluate
 using StatsBase: mode
 
-#struct dwt <: Metric 
-#    w::Int64
-#end
-#evaluate(dist::dwt, a, b) = dwt_distance(a, b, dist.w)
+#evaluate(dist::dwt, a, b) = dtw_distance(a, b, dist.w)
 
 """
-   `dwt_distance(a, b, w)` is the basic dynamic time wraping function.
+   `dtw_distance(a, b, w)` is the basic dynamic time wraping function.
 where `a` & `b` are the time series matrices and `w` is the percentage 
 of window for warping.
 """
-function dwt_distance(a, b, w)
+function dtw_distance(a, b, w)
     l_a, l_b = length(a), length(b)
     FloatMax = maxintfloat(Float64)
     if w <= 0
@@ -46,18 +43,18 @@ function dwt_distance(a, b, w)
     return M[l_a+1,l_b+1]   
 end
 
-function TimeSeriesKnn(X, Y, y, k) #fucntion is rigide and there is no shufling of data.
+function Predict_new(m, X::Array, Y::Array, yplane::Array) 
+    k = m.n_neighbors
     n_train, serieslength = size(X)
     n_test = size(Y, 1)
     y_pred = zeros(n_test)
     DistanceMatrix = zeros(n_test, n_train)
-    yplane = MMI.int(y)
     for i=1:n_test
         for j=1:n_train
-            DistanceMatrix[i, j] = dwt_distance(X[j,:],Y[i,:],-1)
+            DistanceMatrix[i, j] = dtw_distance(X[j,:],Y[i,:], m.metric_params[1])
         end
     end
-    index, dist = select_sort(DistanceMatrix, k), DistanceMatrix[:, 1:k] 
+    index = select_sort(DistanceMatrix, k)
     y_index = yplane[Int.(index)]
     for i=1:n_test
         y_pred[i] = mode(y_index[i, :])
