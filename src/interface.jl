@@ -123,7 +123,7 @@ end
 function MMI.predict(m::TimeSeriesKNNClassifier, fitresult, Xnew)
     Xmatrix_new = MMI.matrix(Xnew)
     Xmatrix, yplain, classes_seen, integers_seen = fitresult
-    y_pred, DistanceMatrix = Predict_new(m, Xmatrix, Xmatrix_new, yplain)
+    y_pred, DistanceMatrix = Predict_new(m, Xmatrix, Xmatrix_new, yplain) 
     a, b = length(y_pred), length(integers_seen)
     probas = zeros(a, b)
     for i=1:a
@@ -132,7 +132,7 @@ function MMI.predict(m::TimeSeriesKNNClassifier, fitresult, Xnew)
         end
     end
     return  [MMI.UnivariateFinite(classes_seen, probas[i, :])
-    for i in 1:size(probas, 1)]
+                for i in 1:size(probas, 1)]
 end
 
 # MMI.fitted_params(::TimeSeriesKNNClassifier, fitresult) 
