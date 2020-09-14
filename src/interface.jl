@@ -71,7 +71,8 @@ function MMI.predict(m::TimeSeriesForestClassifier, fitresult, Xnew)
     forest, intervals, classes_seen, integers_seen = fitresult
     scores = IBF.predict_new(Xmatrix, forest, intervals, integers_seen)
     sm_scores = smooth(scores)
-    return MMI.UnivariateFinite(classes_seen, sm_scores)
+    return [MMI.UnivariateFinite(classes_seen, sm_scores[i, :])
+                   for i in 1:size(sm_scores, 1)]
 end
 
 function smooth(X)

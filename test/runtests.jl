@@ -1,6 +1,6 @@
-using MLJTime, CategoricalArrays
+using MLJTime
 using Test
-#=
+
 @testset "interval based forest" begin
     X, y = ts_dataset("Chinatown")
     train, test = partition(eachindex(y), 0.7)
@@ -10,16 +10,9 @@ using Test
     mach = machine(model, X[train], y[train])
     fit!(mach)
     y_pred = predict_mode(mach, X[test])
-    @test y_pred == categorical([2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0,
-    2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 1.0, 2.0, 2.0, 2.0,
-    2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0,
-    2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 1.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0,
-    1.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0,
-    2.0, 2.0, 2.0, 1.0, 2.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 2.0, 1.0, 1.0, 2.0, 2.0,
-    2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0])
-    print(y_pred)
+    @test accuracy(y_pred, y[test]) > 0.75    
 end
-=#
+
 @testset "distances" begin
     rng = StableRNG(566)
     a = rand(rng, Int64, 5)
