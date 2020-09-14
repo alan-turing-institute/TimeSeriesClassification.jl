@@ -131,7 +131,8 @@ function MMI.predict(m::TimeSeriesKNNClassifier, fitresult, Xnew)
             probas[i,j] = Int(y_pred[i]) == j ? 1 : 0
         end
     end
-    return  MMI.UnivariateFinite(classes_seen, probas)
+    return  [MMI.UnivariateFinite(classes_seen, probas[i, :])
+    for i in 1:size(probas, 1)]
 end
 
 # MMI.fitted_params(::TimeSeriesKNNClassifier, fitresult) 
