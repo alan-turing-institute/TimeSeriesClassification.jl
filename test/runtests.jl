@@ -35,7 +35,7 @@ end
     train, test = partition(eachindex(y), 0.7)
     
     A = rand(StableRNG(566), 5, 5)
-    index = select_sort(A, 3)
+    index = MLJTime.select_sort(A, 3)
     @test index == [1.0 2.0 3.0; 1.0 3.0 4.0; 3.0 2.0 5.0; 1.0 5.0 4.0; 5.0 2.0 4.0]
     
     model = TimeSeriesKNNClassifier()
