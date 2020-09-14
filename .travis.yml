@@ -3,7 +3,7 @@ language: julia
 os:
   - osx
 julia:
-  - 1.4.2
+  - 1.5
 notifications:
   email: false
 after_success:
