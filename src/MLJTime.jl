@@ -22,7 +22,7 @@ const MODULE_DIR = dirname(@__FILE__)
 const MMI = MLJModelInterface
 
 # Includes
-include("IntervalBasedForest.jl")
+include("interval_based_forest.jl")
 include("datapath.jl")
 include("interface.jl")
 include("distances.jl")
