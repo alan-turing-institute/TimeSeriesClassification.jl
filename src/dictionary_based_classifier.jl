@@ -72,47 +72,107 @@ function transform(self, X, y=None)
     end
         dim.append(pd.Series(bag))
     bags[0] = dim
+    end
 end
 
+function _mft(series)
+    start_offset = norm ? 2 : 0
+    lengthl = (word_length + word_length) ÷ 2
+
+    phis = [  [cos(2 * π * (-((i * 2) + start_offset) / 2) / window_size), 
+               -sin(2 * π * (-((i * 2) + start_offset) / 2) / window_size) ] 
+                                          for i = 0:((lengthl÷2)-1) ] #end of dft    
+    phis = vcat(phis...)
+    endl = max(1, series_length - window_size + 1)
+    stds = _calc_incremental_mean_std(series, endl)   #check this function once
+    transformed = zeros(endl, lengthl)
+    mft_data = []
+    for i = 0:endl
+        if i > 0
+            for n = 1:2:lengthl
+                real = mft_data[n] + series[i + window_size - 1] - series[i - 1]
+                imag = mft_data[n + 1]
+                mft_data[n] = real * phis[n] - imag * phis[n + 1]
+                mft_data[n + 1] = real * phis[n + 1] + phis[n] * imag
+            end
+        else
+            mft_data = _discrete_fourier_transform(series[1:window_size], word_length, 
+                                               norm, inverse_sqrt_win_size, normalise=false)
+    
+        normalising_factor = ((1 / stds[i] if stds[i] > 0 else 1) *
+                              self.inverse_sqrt_win_size)
+        transformed[i] = mft_data * normalising_factor
+    
+    return transformed
+end
+
+function _calc_incremental_mean_std(series, endl)
+    means = zeros(endl)
+    stds = zeros(endl)
+    window = series[0:window_size]
+    series_sum = np.sum(window)
+    square_sum = np.sum(np.multiply(window, window))
+    
+    r_window_length = 1 / self.window_size
+    means[0] = series_sum * r_window_length
+    buf = square_sum * r_window_length - means[0] * means[0]
+    stds[0] = math.sqrt(buf) if buf > 0 else 0
+    
+    for w in range(1, endl):
+        series_sum += series[w + self.window_size - 1] - series[w - 1]
+        means[w] = series_sum * r_window_length
+        square_sum += series[w + self.window_size - 1] * series[
+            w + self.window_size - 1] - series[w - 1] * series[
+                          w - 1]
+        buf = square_sum * r_window_length - means[w] * means[w]
+        stds[w] = math.sqrt(buf) if buf > 0 else 0
+    
+    return stds
+end
 # self.series_length  self.window_size, self.n_instances, self.alphabet_size,  self.word_length
 
-function _mcb(X, window_size, alphabet_size, word_length)
+function _mcb(X, window_size, alphabet_size, word_length, norm, inverse_sqrt_win_size, normalise)
     n_instances, series_length = size(X)
     num_windows_per_inst = ceil(series_length / window_size)
-    dft = Array([_mcb_dft(X[i, :], num_windows_per_inst) for i=1:n_instances])
-
+    dft = zeros(Float64, n_instances, num_windows_per_inst, word_length)
+    @inbounds for k=1:n_instances
+        @inbounds for i=1:num_windows_per_inst-1
+            dft[k, i, :] = _discrete_fourier_transform(view(X, k, ((i-1)*window_size + 1):(i*window_size)), 
+                                                word_length, norm, inverse_sqrt_win_size, normalise)
+        end
+        dft[k, end, :] = _discrete_fourier_transform(view(X, k, (series_length-window_size + 1):series_length), 
+                                                word_length, norm, inverse_sqrt_win_size, normalise)
+    end
     total_num_windows = n_instances * num_windows_per_inst
-    breakpoints = zeros((word_length, alphabet_size))
-    for letter in range(word_length)                        # sortring algo, making a array and finding the aproproate ramge to place 
-        column = sort(
-            np.array([round(dft[inst][window][letter] * 100) / 100   # Round function 
-                      for window in range(num_windows_per_inst) for inst in
-                      range(n_instances)]))
-
+    breakpoints = zeros(Float64, word_length, alphabet_size)
+    @inbounds for letter in range(word_length)                        # sortring algo, making a array and finding the aproproate ramge to place 
+        sort!(dft[((letter-1)*total_num_windows + 1):(letter*total_num_windows)])
         bin_index = 0
         target_bin_depth = total_num_windows / alphabet_size
-
-        for bp in range(alphabet_size - 1)
+        @inbounds for bp in range(alphabet_size - 1)
             bin_index += target_bin_depth
-            breakpoints[letter][bp] = column[int(bin_index)]  # Fix the int here!
+            breakpoints[letter][bp] = dft[int(bin_index + (letter-1)*total_num_windows)]  # Check indexing here
         end
-        breakpoints[letter][alphabet_size - 1] = sys.float_info.max   # check this out in the system
-
-    return breakpoints, series_length
+        breakpoints[letter][alphabet_size] = maxintfloat(Float64)   # check this out in the system
+    return breakpoints
 end
 
 # self.window_size, self.window_size
-
-function _mcb_dft(series, num_windows_per_inst, window_size)
+#=
+function _mcb_dft(series, num_windows_per_inst, window_size, series_length,
+                        word_length, norm, inverse_sqrt_win_size, normalise)
     # Splits individual time series into windows and returns the DFT for
     # each
-    series_length = length(series)
-    split = [view(series, ((i-1)*window_size + 1):i*window_size) for i=1:num_windows_per_inst]  # Check the if indexing is correct!
-    last_split = view(series, (series_length-window_size):series_length)
-    split = [split..., last_split]
-    return [_discrete_fourier_transform(row) for row in split]  # find the way to have two indiaces for he same loops @inoans may help
+    Z = zeros(Float64, num_windows_per_inst, window_size)
+    @inbounds for i=1:num_windows_per_inst-1
+        Z[i, :] = _discrete_fourier_transform(series[((i-1)*window_size + 1):(i*window_size)], 
+                                            word_length, norm, inverse_sqrt_win_size, normalise)
+    end
+    Z[end, :] = _discrete_fourier_transform(series[ (series_length-window_size + 1):series_length], 
+                                            word_length, norm, inverse_sqrt_win_size, normalise)
+    return Z # find the way to have two indiaces for he same loops @inoans may help
 end
-
+=#
 # self.word_length, self.alphabet_size, self.breakpoints
 
 function _create_word(self, dft)
@@ -157,6 +217,52 @@ function _add_to_pyramid(self, bag, word, last_word, window_ind)
     return True
 end
 
+function BOSSfit(X,  y, min_window, alphabet_size, word_length, norm, inverse_sqrt_win_size,
+                 normalise, series_length, max_win_len_prop, max_ensemble_size)
+
+    max_window_searches = series_length ÷ 4
+    max_window = series_length * max_win_len_prop
+    win_inc = (max_window - min_window) ÷ max_window_searches
+    for normalise in [true, false]
+        for win_size = min_window:win_inc:(max_window + 1) 
+            boss = _mcb(X, win_size, alphabet_size, word_length, norm, inverse_sqrt_win_size, normalise)
+            _individual_train_acc(outputfrom_boss, y, )
+end
+
+function _train_predict(self, train_num)
+    test_bag = self.transformed_data[train_num]
+    best_dist = sys.float_info.max
+    nn = None
+    
+    for n, bag in enumerate(self.transformed_data)
+        if n == train_num
+            continue
+        end
+        dist = boss_distance(test_bag, bag, best_dist)
+        if dist < best_dist
+            best_dist = dist
+            nn = self.class_vals[n]
+        end
+    end
+    return nn
+end
+
+function _individual_train_acc(self, boss, y, train_size, lowest_acc)
+    correct = 0
+    required_correct = int(lowest_acc * train_size)
+    
+    for i in range(train_size)
+        if correct + train_size - i < required_correct
+            return -1
+        end
+        c = boss._train_predict(i)
+    
+        if c == y[i]
+            correct += 1
+        end
+    end
+    return correct / train_size
+end
 
 """
 julia> linespace(2,4,5, Array{Int})
