@@ -75,7 +75,7 @@ function transform(self, X, y=None)
     end
 end
 
-function _mft(series)
+function _mft(series, word_length, window_size, norm, inverse_sqrt_win_size, series_length )
     start_offset = norm ? 2 : 0
     lengthl = (word_length + word_length) ÷ 2
 
@@ -84,49 +84,46 @@ function _mft(series)
                                           for i = 0:((lengthl÷2)-1) ] #end of dft    
     phis = vcat(phis...)
     endl = max(1, series_length - window_size + 1)
-    stds = _calc_incremental_mean_std(series, endl)   #check this function once
-    transformed = zeros(endl, lengthl)
-    mft_data = []
-    for i = 0:endl
+    stds = _calc_incremental_mean_std(series, endl, window_size)   
+    transformed = zeros(Float64, endl, lengthl)
+    mft_data = []  # Find way to do catching 
+    @inbounds for i = 0:endl-1
         if i > 0
-            for n = 1:2:lengthl
-                real = mft_data[n] + series[i + window_size - 1] - series[i - 1]
+            @inbounds for n = 1:2:lengthl
+                real = mft_data[n] + series[i + window_size] - series[i]
                 imag = mft_data[n + 1]
                 mft_data[n] = real * phis[n] - imag * phis[n + 1]
                 mft_data[n + 1] = real * phis[n + 1] + phis[n] * imag
             end
         else
             mft_data = _discrete_fourier_transform(series[1:window_size], word_length, 
-                                               norm, inverse_sqrt_win_size, normalise=false)
-    
-        normalising_factor = ((1 / stds[i] if stds[i] > 0 else 1) *
-                              self.inverse_sqrt_win_size)
-        transformed[i] = mft_data * normalising_factor
-    
+                                               norm, inverse_sqrt_win_size, false) #normalise=false
+        end
+        normalising_factor = ( (1 / ( stds[i + 1] > 0 ? stds[i + 1] : 1) ) * inverse_sqrt_win_size) 
+        transformed[i + 1, :] = mft_data * normalising_factor
+    end
     return transformed
 end
 
-function _calc_incremental_mean_std(series, endl)
+function _calc_incremental_mean_std(series, endl, window_size)
     means = zeros(endl)
     stds = zeros(endl)
-    window = series[0:window_size]
-    series_sum = np.sum(window)
-    square_sum = np.sum(np.multiply(window, window))
+    window = series[1:window_size]
+    series_sum = sum(window)
+    square_sum = sum(window.*window)
     
-    r_window_length = 1 / self.window_size
-    means[0] = series_sum * r_window_length
-    buf = square_sum * r_window_length - means[0] * means[0]
-    stds[0] = math.sqrt(buf) if buf > 0 else 0
+    r_window_length = 1 / window_size
+    means[1] = series_sum * r_window_length
+    buf = square_sum * r_window_length - means[1]^2
+    stds[1] = buf > 0 ? sqrt(buf) : 0
     
-    for w in range(1, endl):
-        series_sum += series[w + self.window_size - 1] - series[w - 1]
-        means[w] = series_sum * r_window_length
-        square_sum += series[w + self.window_size - 1] * series[
-            w + self.window_size - 1] - series[w - 1] * series[
-                          w - 1]
-        buf = square_sum * r_window_length - means[w] * means[w]
-        stds[w] = math.sqrt(buf) if buf > 0 else 0
-    
+    @inbounds for w =1:(endl-1)
+        series_sum += series[w + window_size] - series[w]
+        means[w + 1] = series_sum * r_window_length
+        square_sum += series[w + window_size]^2 - series[w]^2
+        buf = square_sum * r_window_length - means[w + 1]^2
+        stds[w + 1] = buf > 0 ? sqrt(buf) : 0
+    end
     return stds
 end
 # self.series_length  self.window_size, self.n_instances, self.alphabet_size,  self.word_length
@@ -223,6 +220,7 @@ function BOSSfit(X,  y, min_window, alphabet_size, word_length, norm, inverse_sq
     max_window_searches = series_length ÷ 4
     max_window = series_length * max_win_len_prop
     win_inc = (max_window - min_window) ÷ max_window_searches
+    inverse_sqrt_win_size = 1 / sqrt(window_size)
     for normalise in [true, false]
         for win_size = min_window:win_inc:(max_window + 1) 
             boss = _mcb(X, win_size, alphabet_size, word_length, norm, inverse_sqrt_win_size, normalise)
