@@ -71,14 +71,14 @@ function MMI.predict(m::TimeSeriesForestClassifier, fitresult, Xnew)
     forest, intervals, classes_seen, integers_seen = fitresult
     scores = IBF.predict_new(Xmatrix, forest, intervals, integers_seen)
     sm_scores = smooth(scores)
-    return [MMI.UnivariateFinite(classes_seen, sm_scores[i, :])
+    return [MMI.UnivariateFinite(classes_seen, view(sm_scores, i, :))
                    for i in 1:size(sm_scores, 1)]
 end
 
 function smooth(X)
     a, b = size(X)
     sm_scores = zeros(a, b)
-    indices = map(i -> CartesianIndex(i, findmax(X[i, :])[2]), [1:a;])
+    indices = map(i -> CartesianIndex(i, findmax(view(X, i, :))[2]), [1:a;])
     sm_scores[indices] .= 1
     return sm_scores
 end
@@ -131,7 +131,7 @@ function MMI.predict(m::TimeSeriesKNNClassifier, fitresult, Xnew)
             probas[i,j] = Int(y_pred[i]) == j ? 1 : 0
         end
     end
-    return  [MMI.UnivariateFinite(classes_seen, probas[i, :])
+    return  [MMI.UnivariateFinite(classes_seen, view(probas, i, :))
                 for i in 1:size(probas, 1)]
 end
 
