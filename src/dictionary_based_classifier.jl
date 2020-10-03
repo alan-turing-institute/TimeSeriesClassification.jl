@@ -1,13 +1,91 @@
 using Statistics: std #We have some problem in the calculation of the std
 
-function _discrete_fourier_transform(series, word_length, norm, inverse_sqrt_win_size, normalise)
+function BOSSfit(X,  y, 
+    threshold::Float64=0.92,
+    n_parameter_samples::Int64=250,
+    max_ensemble_size::Int64=500,
+    min_window::Int64=10,
+    word_lengths::Array=[16, 14, 12, 10, 8],
+    weights,
+    max_win_len_prop::Int64= 1,
+    norm_options::Array=[true, false],
+    #norm = false    use normalise instead 
+    alphabet_size::Int64=4,
+    save_words::Bool=true, # for BOSSIndividual and false for SAF
+    random_state=nothing, 
+    levels::Int64=1,
+    normalise_dft::Bool=true,  
+    #bigrams = false   As it is always false in BOSS 
+    remove_repeat_words::Bool=false,
+    level_weights::Array=[1, 2, 4, 16, 32, 64, 128]
+               )
+    n_classes = unique(y) #Take it directly from the interface,           
+    n_instances, series_length = size(X)
+    max_window_searches = series_length ÷ 4
+    max_window = series_length * max_win_len_prop
+    win_inc = (max_window - min_window) ÷ max_window_searches
+    word_length = word_lengths[1] # Try to use one word for it 
+    # Try making a struct with following
+    classifiers = []
+    classifiers_word_len = []
+    classifiers_accuracy = []
+    
+    max_acc = -1
+    min_max_acc = -1
+
+    for i = 1:length(norm_options)
+        for win_size = min_window:win_inc:(max_window + 1) 
+            # window_size = win_size   norm = normalise  Try to replace it with one word 
+            inverse_sqrt_win_size = 1 / sqrt(win_size)
+            breakpoints = _mcb(X, win_size, alphabet_size, word_length, norm_options[i], inverse_sqrt_win_size, normalise_dft)
+            bags, words_lists = transform(X, word_length, win_size, norm_options[i], inverse_sqrt_win_size,
+                                                                 series_length, breakpoints, save_words, normalise_dft)
+            
+            best_classifier_for_win_size = temp = bags                                                       
+            best_acc_for_win_size = -1
+            best_word_len = word_length
+            for j=1:length(word_lengths)
+                if j > 1
+                    bags = _shorten_bags(word_lengths[j], words_lists)  # Fix function 
+                end
+                # Make Array or somthing for accuracy/ may be change the variable 
+                accuracy = _individual_train_acc(bags, y, train_size, best_acc_for_win_size)
+                if accuracy >= best_acc_for_win_size
+                    best_acc_for_win_size = accuracy
+                    best_classifier_for_win_size = bags
+                    best_word_len = word_lengths[j]  
+                end
+            end
+            if some_logic
+                #def _clean(self):
+                #    self.transformer.words = None
+                #    self.transformer.save_words = False
+                #def _set_word_len(self, word_len):
+                #    self.word_length = word_len
+                #    self.transformer.word_length = word_len
+                push!(classifiers, best_classifier_for_win_size)
+                push!(classifiers_word_len, best_word_len)
+                push!(classifiers_accuracy, best_acc_for_win_size)
+                if best_acc_for_win_size > max_acc
+                    
+                end
+                if length(classifiers) > max_ensemble_size
+
+                end
+            end
+            # saving the class if acc > 92 of the best one _include_in_ensemble
+        end
+    end        
+end
+
+function _discrete_fourier_transform(series, word_length, norm, inverse_sqrt_win_size, normalise_dft)
     _length = length(series)
     output_length = ceil(Int, word_length/2)
     start = norm ? 1 : 0
 
     _std = 1
     
-    if normalise
+    if normalise_dft
         s = std(series)  # some issue with std statement ??
         if s!=0
             _std = s
@@ -21,7 +99,7 @@ function _discrete_fourier_transform(series, word_length, norm, inverse_sqrt_win
 
     dft = vcat(dft...)    
     
-    if normalise
+    if normalise_dft
         dft = dft * (inverse_sqrt_win_size/ _std)    
     end
     return dft
@@ -30,18 +108,18 @@ end
 # self._create_word(), self._add_to_pyramid(),  self.levels,  self._add_to_bag(), self.bigrams (are not used ), 
 # self.save_words, self.words.append, self.window_size, self.word_length, 
 
-function transform(X, y, word_length, window_size, norm, inverse_sqrt_win_size, series_length, breakpoints, save_words)    # What is diff b\w transform and _shorten_bags
+function transform(X, word_length, window_size, norm, inverse_sqrt_win_size, series_length, breakpoints, save_words, normalise_dft)    # What is diff b\w transform and _shorten_bags
     # check_is_fitted()
     # X = check_X(X, enforce_univariate=True)
     # X = tabularize(X, return_array=True)
     # bags = pd.DataFrame()
-    # dim = []
+    dim = []
     levels = 1
     norm = norm # norm used in _discrete_fourier_transform and _mft while calcuation
     remove_repeat_words = false
     words_list = zeros(Float64, size(X)[1], size(dfts)[1])
     for i = 1:size(X)[1]
-        dfts = _mft(X[i, :], word_length, window_size, norm, inverse_sqrt_win_size, series_length )
+        dfts = _mft(X[i, :], word_length, window_size, norm, inverse_sqrt_win_size, series_length, normalise_dft)
         bag = Dict() # {} This is how they use the ditionary in the python 
         last_word = -1
         repeat_words = 0
@@ -58,8 +136,8 @@ function transform(X, y, word_length, window_size, norm, inverse_sqrt_win_size, 
             end
             # append!(words, word)
             # levels  
-            repeat_word = levels > 1 ? (_add_to_pyramid(bag, words[window], last_word, window - 
-                                   (repeat_words ÷2)) : _add_to_bag(bag, words[window], last_word))
+            repeat_word = levels > 1 ? (_add_to_pyramid(bag, words[window], last_word, (window - (repeat_words ÷2)), 
+                          remove_repeat_words, series_length, level_weights, levels) : _add_to_bag(bag, words[window], last_word, remove_repeat_words))
             
             if repeat_word               # chek if order of end or if else got messed up
                 repeat_words += 1
@@ -72,71 +150,37 @@ function transform(X, y, word_length, window_size, norm, inverse_sqrt_win_size, 
         if save_words
             words_list[i, :] =  words    #  self.words is equl to words_list 
         end
-        dim.append!(bag)
+        append!(dim, bag)
     end
-    bags[0] = dim
-    return bags
+    return dim, words_list
 end
 
-function _shorten_bags(word_len)
-    new_boss = BOSSIndividual(window_size, word_len,
-                              alphabet_size, norm,
-                              save_words=save_words,
-                              random_state=random_state)
-    new_boss.transformer = self.transformer
-    sfa = self.transformer._shorten_bags(word_len)
-    new_boss.transformed_data = [series.to_dict() for series in
-                                 sfa.iloc[:, 0]]
-    new_boss.class_vals = self.class_vals
-    new_boss.num_classes = self.num_classes
-    new_boss.classes_ = self.classes_
-    new_boss.class_dictionary = self.class_dictionary 
-    new_boss._is_fitted = True
-    return new_boss
-end
-
-# self.words word.word
-function _shorten_bags(self, word_len):      # To loop over different word lenghts
-    new_bags = pd.DataFrame()
+function _shorten_bags(word_len, words_lists)      # Check the logic changes w.r.t transform function
     dim = []
-    
-    for i in range(len(self.words)):
-        bag = {}
+    w_instance, w_length = size(words_lists)
+    for i = 1:w_instance
+        bag = Dict()
         last_word = -1
         repeat_words = 0
-        new_words = []
-        for window, word in enumerate(self.words[i]):
-            new_word = _BitWord(word=word.word)
-            new_word.shorten(16 - word_len)
-            repeat_word = (self._add_to_pyramid(bag, new_word, last_word,
-                                                window -
-                                                int(repeat_words/2))
-                           if self.levels > 1 else
-                           self._add_to_bag(bag, new_word, last_word))
-            if repeat_word:
+        new_words = zeros(Int64, w_length)
+        for j = 1:w_length
+            new_word_len = shorten(16 - word_len)
+            new_words[j] = (words_lists[i, j] >> (2*new_word_len))    # This might be wrong check corner cases
+            repeat_word = levels > 1 ? (_add_to_pyramid(bag, new_words[j], last_word, (window - (repeat_words ÷2)), 
+                          remove_repeat_words, series_length, level_weights, levels) : _add_to_bag(bag, new_words[j], last_word, remove_repeat_words))
+            if repeat_word
                 repeat_words += 1
-            else:
-                last_word = new_word.word
+            else
+                last_word = new_words[j]
                 repeat_words = 0
-    
-            if self.bigrams:
-                new_words.append(new_words)
-    
-                if window - self.window_size >= 0 and window > 0:
-                    bigram = new_words[window - self.window_size] \
-                        .create_bigram(word, self.word_length)
-                    if self.levels > 1:
-                        bigram = (bigram, 0)
-                    bag[bigram] = bag.get(bigram, 0) + 1
-    
-        dim.append(pd.Series(bag))
-    
-    new_bags[0] = dim
-    
-    return new_bags
+            end
+        end
+        append!(dim, bag)
+    end
+    return dim
 end
 
-function _mft(series, word_length, window_size, norm, inverse_sqrt_win_size, series_length )  # Relation b\w transform and mft while runing main loop
+function _mft(series, word_length, window_size, norm, inverse_sqrt_win_size, series_length, normalise_dft)  # Relation b\w transform and mft while runing main loop
     start_offset = norm ? 2 : 0
     lengthl = (word_length + word_length) ÷ 2
 
@@ -158,7 +202,7 @@ function _mft(series, word_length, window_size, norm, inverse_sqrt_win_size, ser
             end
         else
             mft_data = _discrete_fourier_transform(series[1:window_size], word_length, 
-                                               norm, inverse_sqrt_win_size, false) #normalise=false
+                                               norm, inverse_sqrt_win_size, normalise_dft) #normalise =false
         end
         normalising_factor = ( (1 / ( stds[i + 1] > 0 ? stds[i + 1] : 1) ) * inverse_sqrt_win_size) 
         transformed[i + 1, :] = mft_data * normalising_factor
@@ -189,17 +233,17 @@ function _calc_incremental_mean_std(series, endl, window_size)
 end
 # self.series_length  self.window_size, self.n_instances, self.alphabet_size,  self.word_length
 
-function _mcb(X, window_size, alphabet_size, word_length, norm, inverse_sqrt_win_size, normalise)
+function _mcb(X, window_size, alphabet_size, word_length, norm, inverse_sqrt_win_size, normalise_dft)
     n_instances, series_length = size(X)
     num_windows_per_inst = ceil(series_length / window_size)
     dft = zeros(Float64, n_instances, num_windows_per_inst, word_length)
     @inbounds for k=1:n_instances
         @inbounds for i=1:num_windows_per_inst-1
             dft[k, i, :] = _discrete_fourier_transform(view(X, k, ((i-1)*window_size + 1):(i*window_size)), 
-                                                word_length, norm, inverse_sqrt_win_size, normalise)
+                                                word_length, norm, inverse_sqrt_win_size, normalise_dft)
         end
         dft[k, end, :] = _discrete_fourier_transform(view(X, k, (series_length-window_size + 1):series_length), 
-                                                word_length, norm, inverse_sqrt_win_size, normalise)
+                                                word_length, norm, inverse_sqrt_win_size, normalise_dft)
     end
     total_num_windows = n_instances * num_windows_per_inst
     breakpoints = zeros(Float64, word_length, alphabet_size)
@@ -274,59 +318,14 @@ function _add_to_pyramid(bag, word, last_word, window_ind, remove_repeat_words, 
     return true
 end
 
-function BOSSfit(X,  y, min_window, alphabet_size, word_lengths, inverse_sqrt_win_size,
-                  norm_options, series_length, max_win_len_prop, max_ensemble_size)
-    n_instances, series_length = size(X)
-    threshold = 0.92
-    n_parameter_samples=250
-    max_ensemble_size=500
-    min_window = 10
-    word_lengths = [16, 14, 12, 10, 8]
-    n_classes = #Take it directly from the interface
-    weights = [] 
-    max_win_len_prop = 1
-    norm_options = [true, false]
-    max_window_searches = series_length ÷ 4
-    max_window = series_length * max_win_len_prop
-    win_inc = (max_window - min_window) ÷ max_window_searches
-    max_acc = -1
-    min_max_acc = -1
-    for normalise in norm_options
-        for win_size = min_window:win_inc:(max_window + 1) 
-            
-            window_size = win_size    # Try to replace it with one word 
-            #norm = false    use normalise instead 
-            alphabet_size = 4
-            save_words = true # for BOSSIndividual and false for SAF
-            random_state = nothing 
-            word_length = word_lengths[1] # Try to use one word for it 
-            alphabet_size = 4
-            levels = 1
-            #bigrams = false   As it is always false in BOSS 
-            remove_repeat_words = false 
-            inverse_sqrt_win_size = 1 / sqrt(window_size)
-            level_weights = [1, 2, 4, 16, 32, 64, 128]
-
-            outputfrom_boss = _mcb(X, win_size, alphabet_size, word_length, norm, inverse_sqrt_win_size, normalise)
-            outputfrom_transform = transform(outputfrom_boss...)
-            for n, word_len in enumerate(word_lengths)
-                outputfrom_shorten_bags = shorten_bags(word_len, outputfrom_transform)  # function 
-                # Make Array or somthing for accuracy/ may be change the variable 
-                accuracy = _individual_train_acc(outputfrom_shorten_bags, y, train_size, lowest_acc, transformed_data)
-            end
-            # saving the class if acc > 92 of the best one _include_in_ensemble
-        end
-    end        
-end
-
-function _train_predict(train_num, transformed_data)          
+function _train_predict(train_num, bags)          
     best_dist = maxintfloat(Float64)
     nn = nothing                                             # Check on what type nn should be?
-    for n =  1:length(transformed_data)
+    for n =  1:length(bags)
         if n == train_num
             continue
         end
-        dist = boss_distance(transformed_data[train_num], transformed_data[n], best_dist)
+        dist = boss_distance(bags[train_num], bags[n], best_dist)
         if dist < best_dist
             best_dist = dist
             nn = class_vals[n]                        # Make class_vals to loop over BOSSIndividual
@@ -335,14 +334,14 @@ function _train_predict(train_num, transformed_data)
     return nn
 end
 
-function _individual_train_acc(boss, y, train_size, lowest_acc, transformed_data)
+function _individual_train_acc(bags, y, train_size, lowest_acc)
     correct = 0
     required_correct = floor(Int64, lowest_acc * train_size)
     for i = 1:train_size
         if correct + train_size - i < required_correct     # Check the boundary case i or i-1 ?
             return -1
         end
-        c = _train_predict(i, transformed_data)
+        c = _train_predict(i, bags)
         if c == y[i]
             correct += 1
         end
@@ -353,16 +352,16 @@ end
 function boss_distance(first, second, best_dist=maxintfloat(Float64))
     dist = 0
     if typeof(first) <: Dict                   
-        for (word, val_a) in first       # checkout how to loop over Dict items in julia
-            val_b = second.get(word, 0)
+        for (word, val_a) in first       
+            val_b = second[word]         # check the cal again 
             dist += (val_a - val_b) * (val_a - val_b)
             if dist >= best_dist
                 return maxintfloat(Float64)
             end
         end
     else
-        dist = sum( [ first[n] == 0 ? 0 : ( (first[n] - second[n]) * (first[n] - second[n]) )
-                                         for n in range(len(first)) ] )
+        dist = sum( [ first[n] == 0 ? 0 : ( (first[n] - second[n]) * (first[n] - second[n]) ) # Check this code again 
+                                         for n=1:length(first) ] )
     end
     return dist
 end
