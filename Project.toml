@@ -4,16 +4,16 @@ authors = ["Aadesh Deshmukh"]
 version = "0.1.0"
 
 [deps]
-ZipFile = "a5390f91-8eb1-5f08-bee0-b1d1ffed6cea"
-IndexedTables = "6deec6e2-d858-57c5-ab9b-e6ca5bd20e43"
-Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
-DecisionTree = "7806a523-6efd-50cb-b5f6-3fa6f1930dbb"
 CSVFiles = "5d742f6a-9f54-50ce-8119-2520741973ca"
-MLJModelInterface = "e80e1ace-859a-464e-9ed9-23947d8ae3ea"
-MLJBase = "a7f614a8-145f-11e9-1d2a-a57a1082229d"
-StableRNGs = "860ef19b-820b-49d6-a774-d7a799459cd3"
 CategoricalArrays = "324d7699-5711-5eae-9e2f-1d82baa6b597"
+DecisionTree = "7806a523-6efd-50cb-b5f6-3fa6f1930dbb"
+IndexedTables = "6deec6e2-d858-57c5-ab9b-e6ca5bd20e43"
+MLJBase = "a7f614a8-145f-11e9-1d2a-a57a1082229d"
+MLJModelInterface = "e80e1ace-859a-464e-9ed9-23947d8ae3ea"
+StableRNGs = "860ef19b-820b-49d6-a774-d7a799459cd3"
+Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 StatsBase = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
+ZipFile = "a5390f91-8eb1-5f08-bee0-b1d1ffed6cea"
 
 [compat]
 julia = "1"

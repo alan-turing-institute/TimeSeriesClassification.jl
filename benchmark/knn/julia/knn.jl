@@ -6,25 +6,25 @@ using BenchmarkTools, MLJTime
 datasets = [
     #"ACSF1",
     #"Adiac",
-    # "AllGestureWiimoteX",
-    # "AllGestureWiimoteY",
-    # "AllGestureWiimoteZ",
-    #"ArrowHead",
+    #"AllGestureWiimoteX",
+    #"AllGestureWiimoteY",
+    #"AllGestureWiimoteZ",
+    "ArrowHead",
     "Coffee",
-    #"Beef",
-    #"BeetleFly",
-    #"BirdChicken",
-    #"BME",
-    #"Car",
-    #"CBF",
+    "Beef",
+    "BeetleFly",
+    "BirdChicken",
+    "BME",
+    "Car",
+    "CBF",
     "Chinatown",
-    "ChlorineConcentration",
+    #"ChlorineConcentration",
     #"CinCECGTorso",
     "Computers",
     "CricketX",
     "CricketY",
     "CricketZ",
-    "Crop",
+    #"Crop",
     "DiatomSizeReduction",
     "DistalPhalanxOutlineCorrect",
     "DistalPhalanxOutlineAgeGroup",
@@ -34,20 +34,20 @@ datasets = [
     # "DodgerLoopWeekend",
     "Earthquakes",
     "ECG200",
-    "ECG5000",
+    #"ECG5000",
     "ECGFiveDays",
-    "ElectricDevices",
+    #"ElectricDevices",
     "EOGHorizontalSignal",
     "EOGVerticalSignal",
-    "EthanolLevel",
-    "FaceAll",
+    #"EthanolLevel",
+    #"FaceAll",
     "FaceFour",
-    "FacesUCR",
+    #"FacesUCR",
     "FiftyWords",
     "Fish",
-    "FordA",
-    "FordB",
-    "FreezerRegularTrain",
+    #"FordA",
+    #"FordB",
+    #"FreezerRegularTrain",
     "FreezerSmallTrain",
     "Fungi",
     # "GestureMidAirD1",
@@ -62,27 +62,27 @@ datasets = [
     "InlineSkate",
     "InsectEPGRegularTrain",
     "InsectEPGSmallTrain",
-    "InsectWingbeatSound",
+    #"InsectWingbeatSound",
     "ItalyPowerDemand",
     "LargeKitchenAppliances",
     "Lightning2",
     "Lightning7",
     "Mallat",
     "Meat",
-    "MedicalImages",
+    #"MedicalImages",
     # "MelbournePedestrian",
     "MiddlePhalanxOutlineCorrect",
     "MiddlePhalanxOutlineAgeGroup",
     "MiddlePhalanxTW",
-    "MixedShapesRegularTrain",
-    "MixedShapesSmallTrain",
+    #"MixedShapesRegularTrain",
+    #"MixedShapesSmallTrain",
     "MoteStrain",
-    "NonInvasiveFetalECGThorax1",
-    "NonInvasiveFetalECGThorax2",
+    #"NonInvasiveFetalECGThorax1",
+    #"NonInvasiveFetalECGThorax2",
     "OliveOil",
     "OSULeaf",
-    "PhalangesOutlinesCorrect",
-    "Phoneme",
+    #"PhalangesOutlinesCorrect",
+    #"Phoneme",
     # "PickupGestureWiimoteZ",
     "PigAirwayPressure",
     "PigArtPressure",
@@ -96,45 +96,45 @@ datasets = [
     "RefrigerationDevices",
     #"Rock",
     "ScreenType",
-    "SemgHandGenderCh2",
-    "SemgHandMovementCh2",
-    "SemgHandSubjectCh2",
+    #"SemgHandGenderCh2",
+    #"SemgHandMovementCh2",
+    #"SemgHandSubjectCh2",
     # "ShakeGestureWiimoteZ",
     "ShapeletSim",
-    "ShapesAll",
+    #"ShapesAll",
     "SmallKitchenAppliances",
     "SmoothSubspace",
     "SonyAIBORobotSurface1",
     "SonyAIBORobotSurface2",
     # "StarlightCurves",
-    "Strawberry",
-    "SwedishLeaf",
+    #"Strawberry",
+    #"SwedishLeaf",
     "Symbols",
     "SyntheticControl",
     "ToeSegmentation1",
     "ToeSegmentation2",
     "Trace",
     "TwoLeadECG",
-    "TwoPatterns",
+    #"TwoPatterns",
     "UMD",
-    "UWaveGestureLibraryAll",
-    "UWaveGestureLibraryX",
-    "UWaveGestureLibraryY",
-    "UWaveGestureLibraryZ",
-    "Wafer",
+    #"UWaveGestureLibraryAll",
+    #"UWaveGestureLibraryX",
+    #"UWaveGestureLibraryY",
+    #"UWaveGestureLibraryZ",
+    #"Wafer",
     "Wine",
     "WordSynonyms",
     "Worms",
-    "WormsTwoClass",
-    "Yoga"
+    "WormsTwoClass"
+    #"Yoga"
 ]
 
-DATA_DIR_BENCH = false
+DATA_DIR_BENCH = "/Users/aa25desh/Univariate_ts"
 
 @assert DATA_DIR_BENCH != false  "path to the dataset is missing"
 
 io =  open("results_knn.txt", "w")
-write(io, "dataset,predict_bench,fit_bench,Accuracy\n")
+write(io, "dataset,Accuracy\n")
 
 for dataset in datasets
 
@@ -147,10 +147,11 @@ for dataset in datasets
        model = TimeSeriesKNNClassifier()
        mach = machine(model, X_train, y_train)
        fit!(mach)
-       #fit_bench = @benchmark fit!($mach, force=true)
+       print(dataset)
+       @time fit!(mach)
        #fit_bench = ( fit_bench.times |> mean )*10^-9   #As fit_bench.times is in nano seconds 
        y_pred = predict_mode(mach, X_test)
-       #predict_bench = @benchmark predict($mach, $X_test)
+       @time predict(mach, X_test)
        #predict_bench = ( predict_bench.times |> mean )*10^-9
        Accuracy = accuracy(y_pred, y_test)
        write(io, "$dataset, $Accuracy\n")

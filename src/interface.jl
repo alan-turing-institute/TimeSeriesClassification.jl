@@ -56,8 +56,8 @@ ensemble the trees with averaged probability estimates
     display_depth::Int               =       5::(_ ≥ 1)
 end
 
-function MMI.fit(m::TimeSeriesForestClassifier, verbosity::Int, X, y)
-    Xmatrix, yplain = MMI.matrix(X), MMI.int(y)
+function MMI.fit(m::TimeSeriesForestClassifier, verbosity::Int, Xmatrix, y)
+    yplain = MMI.int(y)
     classes_seen  = filter(in(unique(y)), MMI.classes(y[1]))
     integers_seen = MMI.int(classes_seen)
     forest, intervals = IBF.TimeSeriesForestClassifier(m, Xmatrix, yplain)
@@ -66,8 +66,7 @@ function MMI.fit(m::TimeSeriesForestClassifier, verbosity::Int, X, y)
     return fitresult, nothing, nothing
 end
 
-function MMI.predict(m::TimeSeriesForestClassifier, fitresult, Xnew)
-    Xmatrix = MMI.matrix(Xnew)
+function MMI.predict(m::TimeSeriesForestClassifier, fitresult, Xmatrix) 
     forest, intervals, classes_seen, integers_seen = fitresult
     scores = IBF.predict_new(Xmatrix, forest, intervals, integers_seen)
     sm_scores = smooth(scores)
@@ -111,8 +110,8 @@ time series data.
     metric_params::Array                  =   [-1.0]
 end
 
-function MMI.fit(m::TimeSeriesKNNClassifier, verbosity::Int, X, y)
-    Xmatrix, yplain = MMI.matrix(X), MMI.int(y)
+function MMI.fit(m::TimeSeriesKNNClassifier, verbosity::Int, Xmatrix, y)
+    yplain = MMI.int(y)
     classes_seen  = filter(in(unique(y)), MMI.classes(y[1]))
     integers_seen = MMI.int(classes_seen)
     fitresult = (Xmatrix, yplain, classes_seen, integers_seen)
@@ -120,14 +119,13 @@ function MMI.fit(m::TimeSeriesKNNClassifier, verbosity::Int, X, y)
     return fitresult, nothing, nothing
 end
 
-function MMI.predict(m::TimeSeriesKNNClassifier, fitresult, Xnew)
-    Xmatrix_new = MMI.matrix(Xnew)
+function MMI.predict(m::TimeSeriesKNNClassifier, fitresult, Xmatrix_new)
     Xmatrix, yplain, classes_seen, integers_seen = fitresult
     y_pred, DistanceMatrix = Predict_new(m, Xmatrix, Xmatrix_new, yplain) 
     a, b = length(y_pred), length(integers_seen)
     probas = zeros(a, b)
-    for i=1:a
-        for j=1:b
+    @inbounds for i=1:a
+        @inbounds for j=1:b
             probas[i,j] = Int(y_pred[i]) == j ? 1 : 0
         end
     end

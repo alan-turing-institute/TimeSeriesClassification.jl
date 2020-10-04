@@ -143,6 +143,7 @@ for dataset in datasets
  
    test, train =  load_ts_file.([Path_test, Path_train])
    X_test, X_train, y_test, y_train = test[1], train[1], test[2], train[2]
+   X_test, X_train = matrix(X_test), matrix(X_train)
    for n_trees in [200]
        model = TimeSeriesForestClassifier(n_trees=n_trees)
        mach = machine(model, X_train, y_train)

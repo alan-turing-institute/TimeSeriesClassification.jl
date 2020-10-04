@@ -60,7 +60,8 @@ function Predict_new(m, X::Array, Y::Array, yplane::Array)
             DistanceMatrix[i, j] = dtw_distance(view(X, j, :), view(Y, i, :), m.metric_params[1], M)
         end
     end
-    index = select_sort(DistanceMatrix, k)
+    index = zeros(n_test, k)
+    index = select_sort(DistanceMatrix, index, k)
     y_index = yplane[Int.(index)]
     @inbounds for i=1:n_test
         y_pred[i] = mode(view(y_index, i, :))
@@ -68,16 +69,15 @@ function Predict_new(m, X::Array, Y::Array, yplane::Array)
     return y_pred, DistanceMatrix
 end
 
-function select_sort(A, k) # some times we get consicative indx
+function select_sort(A, index, k) # some times we get consicative indx
     n_test, n_train = size(A)
-    index = zeros(n_test, k)
     @inbounds for l=1:n_test
         @inbounds for i=1:n_train
             if i > k
                 break 
             end
             min_idx = i 
-            for j=i+1:n_train
+            @inbounds for j=i+1:n_train
                 if A[l, min_idx] > A[l, j] 
                     min_idx = j    
                 end             

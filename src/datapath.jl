@@ -6,7 +6,7 @@ function MMI.matrix(table)
     cols = columns(table)
     a, b = length(cols[1]), length(cols)
     matrix = Matrix{Float64}(undef, a, b)
-    for i=1:b
+    @inbounds for i=1:b
         matrix[:, i] = cols[i]
     end
     return matrix
@@ -23,7 +23,8 @@ function load_dataset(fname::String)
     fpath = joinpath(DATA_DIR, fname)
     data_raw = load(fpath, header_exists=false)
     Xmatrix = matrix(table(data_raw)) #check if we can use data_raw directly for y
-    return table(Xmatrix[:, 1:end-1]), CategoricalArray(Xmatrix[:,end])
+    width = size(Xmatrix)[2]
+    return table(view(Xmatrix, :, 1:(width-1))), CategoricalArray(view(Xmatrix, :, width))
 end
 
 #NOTE: permutedims(cat(mat, mat2, dims=3),[1,3,2]) For Motions, eg for multi-dimensional dataset.
@@ -108,8 +109,8 @@ function load_from_tsfile_to_NDArray(fpath)
     serieslength = length(series_dim1)
     NDMatrix = zeros(instance, serieslength, dimensions)
     data = cat(data..., dims=3)
-    for i=1:instance
-        for j=1:dimensions
+    @inbounds for i=1:instance
+        @inbounds for j=1:dimensions
             NDMatrix[i,:,j] = parse.(Float64, split(data[j,1,i], r"[,]"))
         end
     end

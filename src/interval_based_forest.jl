@@ -15,7 +15,7 @@ function TimeSeriesForestClassifier(m, Xmatrix::Array, yplain::Array)
                                                  m.random_state)
     forest = Array{Node,1}()
     @inbounds for i in range(1, stop=n_trees)
-        tree = build_tree(yplain, Interval_features[i],
+        tree = build_tree(yplain, view(Interval_features, :, :, i),
                          m.n_subfeatures,
                          m.max_depth,
                          m.min_samples_leaf,
@@ -40,7 +40,7 @@ function predict_new(Xmatrix::Array, forest, Intervals::Array, integers_seen)
     Interval_features = InvFeatureGen(Xmatrix, Intervals, n_trees)
     sum = zeros(n_instance, length(integers_seen))
     @inbounds for i=1:n_trees
-        sum += apply_tree_proba(forest[i], Interval_features[i], integers_seen)
+        sum += apply_tree_proba(forest[i], view(Interval_features, :, :, i), integers_seen)
     end
     return sum/n_trees
 end
@@ -53,12 +53,10 @@ and slope of the random intervals resulting 3*√m features.
 """
 function InvFeatureGen(Xmatrix::Array, n_trees::Int, min_interval::Int, random_state)
     n_instance, series_length = size(Xmatrix)
-    Interval_features = Array{Array{Float64,2},1}()
     n_intervals = floor(Int64, sqrt(series_length))
+    Interval_features = Array{Float64,3}(undef, n_instance, 3*n_intervals, n_trees)
     Intervals = zeros(Int64, n_trees, n_intervals, 2)
-    interval_feature = Array{Float64,2}(undef, 3*n_intervals, n_instance)
     @inbounds for i in range(1, stop = n_trees)
-       # interval_feature = Array{Float64,2}(undef, 3*n_intervals, n_instance)  catching
        @inbounds for j in range(1, stop = n_intervals)
            if typeof(random_state) == StableRNGs.LehmerRNG
                Intervals[i,j,1] = rand(random_state, 1:(series_length - min_interval))
@@ -73,32 +71,28 @@ function InvFeatureGen(Xmatrix::Array, n_trees::Int, min_interval::Int, random_s
            Intervals[i,j,2] = Intervals[i,j,1] + len
            Y = @views Xmatrix[:, Intervals[i,j,1]:Intervals[i,j,2]]
            x = Array(1:size(Y)[2])
-           interval_feature[3*j-2,:] =  mean(Y, dims=2)                              #means
-           interval_feature[3*j-1,:] =  std(Y, dims=2)                               #stds
-           interval_feature[3*j,:]   =  (mean(transpose(x).*Y, dims=2) -             #slope
+           Interval_features[:, 3*j-2, i] =  mean(Y, dims=2)                              #means
+           Interval_features[:, 3*j-1, i] =  std(Y, dims=2)                               #stds
+           Interval_features[:, 3*j, i]   =  (mean(transpose(x).*Y, dims=2) -             #slope
                                          mean(x)*mean(Y, dims=2)) / (mean(x.*x) - mean(x)^2)
        end
-           push!(Interval_features, transpose(interval_feature))
     end
     return Interval_features, Intervals
 end
 
 function InvFeatureGen(Xmatrix::Array, Intervals::Array, n_trees::Int)
     n_instance, series_length = size(Xmatrix)
-    Interval_features = Array{Array{Float64,2},1}()
     n_intervals = floor(Int64, sqrt(series_length))
-    interval_feature = Array{Float64,2}(undef, 3*n_intervals, n_instance)
+    Interval_features = Array{Float64,3}(undef, n_instance, 3*n_intervals, n_trees)
     @inbounds for i in range(1, stop = n_trees)
-       #interval_feature = Array{Float64,2}(undef, 3*n_intervals, n_instance)
        @inbounds for j in range(1, stop = n_intervals)
            Y = @views Xmatrix[:, Intervals[i,j,1]:Intervals[i,j,2]]
            x = Array(1:size(Y)[2])
-           interval_feature[3*j-2,:] =  mean(Y, dims=2)                              #means
-           interval_feature[3*j-1,:] =  std(Y, dims=2)                               #stds
-           interval_feature[3*j,:]   =  (mean(transpose(x).*Y, dims=2) -             #slope
-                                         mean(x)*mean(Y, dims=2)) / (mean(x.*x) - mean(x)^2)           
+           Interval_features[:, 3*j-2, i] =  mean(Y, dims=2)                              #means
+           Interval_features[:, 3*j-1, i] =  std(Y, dims=2)                               #stds
+           Interval_features[:, 3*j, i]   =  (mean(transpose(x).*Y, dims=2) -             #slope
+                                         mean(x)*mean(Y, dims=2)) / (mean(x.*x) - mean(x)^2)        
        end
-           push!(Interval_features, transpose(interval_feature))
     end
     return Interval_features
 end
