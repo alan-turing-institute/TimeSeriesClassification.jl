@@ -25,6 +25,6 @@ const MMI = MLJModelInterface
 include("interval_based_forest.jl")
 include("datapath.jl")
 include("interface.jl")
-include("distances.jl")
+include("distances_based_classifier.jl")
 
 end # module
