@@ -20,8 +20,10 @@ function dtw_distance(a, b, w, M)
     M[:] .= 0.0
     M[1, 2:end] .= FloatMax
     M[2:end, 1] .= FloatMax
-    @inbounds for k=2:l_a 
-        M[k, 2:end] =  (a .-  b[k]).^2
+    @inbounds for k=2:l_a
+        @inbounds for l=1:l_a 
+            M[k, l+1] =  (a[l] -  b[k]).^2
+        end
     end
     @inbounds for i=2:l_a+1
         jstart = max(2, i-band)
@@ -49,13 +51,13 @@ function Predict_new(m, X::Array, Y::Array, yplane::Array)
     n_test, _serieslength = size(Y)
 
     y_pred = zeros(n_test)
-    M = zeros(serieslength+1, _serieslength+1)
-    FloatMax = maxintfloat(Float64)
-    M[1, 2:end] .= FloatMax
-    M[2:end, 1] .= FloatMax
     DistanceMatrix = zeros(n_test, n_train)
 
-    @inbounds for i=1:n_test
+    Threads.@threads for i=1:n_test
+        M = zeros(serieslength+1, _serieslength+1)
+        FloatMax = maxintfloat(Float64)
+        M[1, 2:end] .= FloatMax
+        M[2:end, 1] .= FloatMax
         @inbounds for j=1:n_train
             DistanceMatrix[i, j] = dtw_distance(view(X, j, :), view(Y, i, :), m.metric_params[1], M)
         end
