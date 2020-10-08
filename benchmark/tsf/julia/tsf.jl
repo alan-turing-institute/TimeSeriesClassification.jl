@@ -4,7 +4,7 @@
 using BenchmarkTools, MLJTime
 
 datasets = [
-    "ACSF1",
+    #"ACSF1",
     "Adiac",
     # "AllGestureWiimoteX",
     # "AllGestureWiimoteY",
@@ -129,7 +129,7 @@ datasets = [
     "Yoga"
 ]
 
-DATA_DIR_BENCH = false
+DATA_DIR_BENCH = "/Users/aa25desh/Univariate_ts"
 
 @assert DATA_DIR_BENCH != false  "path to the dataset is missing"
 
