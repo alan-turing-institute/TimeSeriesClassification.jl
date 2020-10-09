@@ -26,5 +26,6 @@ include("interval_based_forest.jl")
 include("datapath.jl")
 include("interface.jl")
 include("distances_based_classifier.jl")
+include("rocket.jl")
 
 end # module
