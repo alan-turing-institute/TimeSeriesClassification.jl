@@ -9,7 +9,7 @@ using StatsBase: mode
 where `a` & `b` are the time series matrices and `w` is the percentage 
 of window for warping.
 """
-function dtw_distance(a, b, w, M)
+function dtw_distance(a::AbstractArray, b::AbstractArray, w, M::Array)
     l_a, l_b = length(a), length(b)
     FloatMax = maxintfloat(Float64)
     if w <= 0
@@ -71,7 +71,7 @@ function Predict_new(m, X::Array, Y::Array, yplane::Array)
     return y_pred, DistanceMatrix
 end
 
-function select_sort(A, index, k) # some times we get consicative indx
+function select_sort(A::Array, index::Array, k::Int64) # some times we get consicative indx
     n_test, n_train = size(A)
     @inbounds for l=1:n_test
         @inbounds for i=1:n_train

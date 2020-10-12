@@ -1,9 +1,11 @@
 using Distributions: Uniform, Normal
-using StatsBase: mean, sample
+using StatsBase: mean, sample, standardize
 using Random
 using LinearAlgebra
 
-function RocketFit(num_kernels::Int=10_000, normalise::Bool=true, random_state=nothing)
+function RocketFit(X::Array, num_kernels::Int64=10000, normalise::Bool=true, random_state=nothing)
+    n_timepoints, n_columns = size(X)  #n_timepoints should be max of sereis length in multidimentional series!
+    X = standardize(ZScoreTransform, X, dims=2)
     random_state = typeof(random_state) == Int64 ? random_state : nothing
     kernels = _generate_kernels(n_timepoints, num_kernels, n_columns, random_state)
     return Kernels
@@ -25,12 +27,12 @@ function _generate_kernels(n_timepoints, num_kernels, n_columns, seed)
     lengths = sample(candidate_lengths, num_kernels)
     num_channel_indices = zeros(Int32, num_kernels)
 
-    @inbounds for i=1:num_kernels
-        limit = minimum(n_columns, lengths[i])
+    for i=1:num_kernels
+        limit = min(n_columns, lengths[i])
         num_channel_indices[i] = floor(Int32, 2^(rand(Uniform(0, log2(limit + 1)))))
     end
 
-    channel_indices = zeros(floor(Int32, sum(num_channel_indices)))
+    channel_indices = zeros(Int32, floor(Int32, sum(num_channel_indices)))
 
     weights = zeros(Float64, floor(Int32, dot(lengths, num_channel_indices)))
 
@@ -38,10 +40,10 @@ function _generate_kernels(n_timepoints, num_kernels, n_columns, seed)
     dilations = zeros(Int32, num_kernels)
     paddings = zeros(Int32, num_kernels)
 
-    a1 = 0  # for weights
-    a2 = 0  # for channel_indices
+    a1 = 1  # for weights
+    a2 = 1  # for channel_indices
 
-    @inbounds for i=1:num_kernels
+    for i=1:num_kernels
 
         _length = lengths[i]
         _num_channel_indices = num_channel_indices[i]
@@ -51,15 +53,15 @@ function _generate_kernels(n_timepoints, num_kernels, n_columns, seed)
         b1 = a1 + (_num_channel_indices * _length)
         b2 = a2 + _num_channel_indices
 
-        a3 = 0  # Check index
-        @inbounds for _ = 1:_num_channel_indices
+        a3 = 1  # Check index
+        for _ = 1:_num_channel_indices
             b3 = a3 + _length
-            _weights[a3:b3] = _weights[a3:b3] - mean(_weights[a3:b3])
+            _weights[a3:b3-1] = _weights[a3:b3-1] .- mean(_weights[a3:b3-1])
             a3 = b3
         end
-        weights[a1:b1] = _weights
+        weights[a1:b1-1] = _weights
 
-        channel_indices[a2:b2] = sample([0:(n_columns-1)], _num_channel_indices, replace=false)
+        channel_indices[a2:b2-1] = sample([0:(n_columns-1);], _num_channel_indices, replace=false)
 
         biases[i] = rand(Uniform(-1, 1))
 
@@ -67,7 +69,7 @@ function _generate_kernels(n_timepoints, num_kernels, n_columns, seed)
 
         dilations[i] = dilation
 
-        padding = ((_length - 1) * dilation) // (rand((0,1)) == 1 ? 2 : 0 )     # check //
+        padding = (rand(0,1) == 1) ? (((_length - 1) * dilation) ÷ 2) : 0      # check //
         paddings[i] = padding
 
         a1 = b1
