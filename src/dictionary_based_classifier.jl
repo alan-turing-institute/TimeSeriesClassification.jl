@@ -1,3 +1,4 @@
+#=
 using Statistics: std #We have some problem in the calculation of the std
 
 function BOSSfit(X,  y, 
@@ -376,4 +377,4 @@ julia> linespace(2,4,5, Array{Int})
  4
 """
 linespace(start,stop,_length, _type) =  convert(_type, floor.(LinRange(start,stop,_length)))
-
+=#
