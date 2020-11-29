@@ -2,7 +2,7 @@
 An [MLJ](https://github.com/alan-turing-institute/MLJ.jl) compatible Julia toolbox for machine learning with
 time series.
 
-[![Build Status](https://travis-ci.com/alan-turing-institute/MLJTime.jl.svg?branch=master)](https://travis-ci.com/alan-turing-institute/MLJTime.jl)
+[![Build Status](https://github.com/alan-turing-institute/MLJTime.jl/workflows/CI/badge.svg)](https://github.com/alan-turing-institute/MLJTime.jl/actions)
 [![Coverage](http://codecov.io/github/alan-turing-institute/MLJTime.jl/coverage.svg?branch=master)](http://codecov.io/github/alan-turing-institute/MLJTime.jl?branch=master)
 
 
