@@ -27,11 +27,11 @@ X_test, y_test = X[test], y[test];
 
 # train model
 model = TimeSeriesForestClassifier(n_trees=3)
-mach = machine(model, X_train, y_train)
+mach = machine(model, matrix(X_train), y_train)
 fit!(mach)
 
 # make predictions
-y_pred = predict_mod(mach, X_test)
+y_pred = predict_mode(mach, matrix(X_train))
 ```
 
 ## Documentation
