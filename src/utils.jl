@@ -1,3 +1,5 @@
+#=
+Use these methods to convert .ts files to .csv 
 """
     `TSdataset(dataset::Array)`
 TSdataset takes subset of the `univariate_datasets` avilabe on the `timeseriesclassification`
@@ -57,3 +59,4 @@ function TSdataset(filepath::String)
         end
     end
 end
+=#

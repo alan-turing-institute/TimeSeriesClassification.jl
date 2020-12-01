@@ -24,7 +24,8 @@ function load_dataset(fname::String)
     data_raw = load(fpath, header_exists=false)
     Xmatrix = matrix(table(data_raw)) #check if we can use data_raw directly for y
     width = size(Xmatrix)[2]
-    return table(view(Xmatrix, :, 1:(width-1))), CategoricalArray(view(Xmatrix, :, width))
+    #return table(view(Xmatrix, :, 1:(width-1))), CategoricalArray(view(Xmatrix, :, width))   moving away from IndexedTable
+    return Xmatrix[:, 1:(width-1)], CategoricalArray(view(Xmatrix, :, width))
 end
 
 #NOTE: permutedims(cat(mat, mat2, dims=3),[1,3,2]) For Motions, eg for multi-dimensional dataset.
